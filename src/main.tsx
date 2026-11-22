@@ -1,6 +1,6 @@
 import './index.css';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, type User } from 'firebase/auth';
+import { getAuth, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, getDocs, onSnapshot } from 'firebase/firestore';
 
 declare const XLSX: any;
@@ -27,7 +27,6 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : 'horyeoul7-worklog';
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-let currentUser: User | null = null;
 
 const getColRef = (colName: string) => collection(db, 'artifacts', appId, 'public', 'data', colName);
 const getDocRef = (colName: string, docId: string) => doc(db, 'artifacts', appId, 'public', 'data', colName, String(docId));
@@ -164,13 +163,15 @@ async function initCloudSync() {
   const txt = document.getElementById('cloudStatusText');
 
   try {
-    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-      await signInWithCustomToken(auth, __initial_auth_token);
-    } else {
-      await signInAnonymously(auth);
+    try {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    } catch (authErr) {
+      console.warn('Anonymous auth skipped (proceeding directly with Firestore):', authErr);
     }
-    currentUser = auth.currentUser;
-    if (!currentUser) throw new Error('인증 사용자 없음');
 
     await seedInitialDataIfEmpty();
 
@@ -248,16 +249,12 @@ async function initCloudSync() {
 }
 
 async function seedInitialDataIfEmpty() {
-  const staffSnap = await getDocs(getColRef('staff'));
-  if (staffSnap.empty) {
-    const defaultStaff = [
-      { id: 'st-1', name: '김철수', role: '시설과장', order: 1 },
-      { id: 'st-2', name: '이영희', role: '경리주임', order: 2 },
-      { id: 'st-3', name: '박민수', role: '기전주임', order: 3 },
-      { id: 'st-4', name: '최동훈', role: '보안반장', order: 4 }
-    ];
-    for (const s of defaultStaff) await setDoc(getDocRef('staff', s.id), s);
+  const seedSnap = await getDocs(getColRef('settings'));
+  if (seedSnap.docs.some(d => d.id === 'initialSeedDone')) return;
 
+  const staffSnap = await getDocs(getColRef('staff'));
+  const logsSnap = await getDocs(getColRef('logs'));
+  if (staffSnap.empty && logsSnap.empty) {
     const today = getTodayString();
     await setDoc(getDocRef('logs', 'log-init-1'), {
       id: 'log-init-1',
@@ -274,7 +271,7 @@ async function seedInitialDataIfEmpty() {
       id: 'ho-init-1',
       type: '주간→야간',
       isImportant: true,
-      author: '김철수 (시설과장)',
+      author: '관리사무소',
       content: '702동 지하주차장 입구 배수로 덮개 보수 완료했습니다. 야간 순찰 시 차량 통행에 지장 없는지 한 번 더 확인 부탁드립니다.',
       createdAt: `${today} 17:40`,
       timestamp: Date.now() - 1800000,
@@ -308,6 +305,7 @@ async function seedInitialDataIfEmpty() {
       timestamp: Date.now()
     });
   }
+  await setDoc(getDocRef('settings', 'initialSeedDone'), { done: true });
 }
 
 function getTodayString() {
@@ -497,7 +495,6 @@ async function submitWorkLog(e: Event) {
     document.getElementById('workerSelect')?.focus();
     return;
   }
-  if (!currentUser) return;
 
   const date = (document.getElementById('logDate') as HTMLInputElement).value;
   const location = (document.getElementById('logLocation') as HTMLInputElement).value.trim();
@@ -802,7 +799,6 @@ function closeEditModal() {
 async function saveEditedLog(e: Event) {
   e.preventDefault();
   const id = (document.getElementById('editLogId') as HTMLInputElement).value;
-  if (!currentUser) return;
 
   try {
     await updateDoc(getDocRef('logs', id), {
@@ -820,7 +816,6 @@ async function saveEditedLog(e: Event) {
 
 function promptDeleteLog(logId: string) {
   openConfirmModal('작업일지 삭제', '선택한 작업일지를 영구 삭제하시겠습니까?', async () => {
-    if (!currentUser) return;
     await deleteDoc(getDocRef('logs', logId));
     showToast('작업일지가 삭제되었습니다.', 'info');
   });
@@ -847,7 +842,6 @@ async function submitHandover(e: Event) {
     document.getElementById('workerSelect')?.focus();
     return;
   }
-  if (!currentUser) return;
 
   const worker = state.staff.find(s => s.id === state.selectedWorkerId);
   const authorLabel = worker ? `${worker.name} (${worker.role})` : '미등록 직원';
@@ -887,7 +881,6 @@ async function confirmHandover(id: string) {
     document.getElementById('workerSelect')?.focus();
     return;
   }
-  if (!currentUser) return;
 
   const worker = state.staff.find(s => s.id === state.selectedWorkerId);
   const now = new Date();
@@ -921,7 +914,6 @@ function closeEditHandoverModal() {
 async function saveHandoverEdit(e: Event) {
   e.preventDefault();
   const id = (document.getElementById('editHoId') as HTMLInputElement).value;
-  if (!currentUser) return;
 
   try {
     await updateDoc(getDocRef('handovers', id), {
@@ -939,7 +931,6 @@ async function saveHandoverEdit(e: Event) {
 
 function promptDeleteHandover(id: string) {
   openConfirmModal('공지 · 인수인계 삭제', '이 공지/인수인계 항목을 삭제하시겠습니까?', async () => {
-    if (!currentUser) return;
     await deleteDoc(getDocRef('handovers', id));
     showToast('삭제되었습니다.', 'info');
   });
@@ -1209,7 +1200,6 @@ async function handleToolSmartFile(e: Event) {
 }
 
 async function confirmBatchToolImport() {
-  if (!currentUser) return;
   const selected = state.pendingToolImports.filter(i => i.checked && i.name);
   if (selected.length === 0) {
     showToast('등록할 공구를 1개 이상 선택해 주세요.', 'error');
@@ -1268,7 +1258,6 @@ function setToolFilter(filter: string) {
 
 async function handleAddTool(e: Event) {
   e.preventDefault();
-  if (!currentUser) return;
   const name = (document.getElementById('newToolName') as HTMLInputElement).value.trim();
   const location = (document.getElementById('newToolLocation') as HTMLInputElement).value.trim();
   const qty = (document.getElementById('newToolQty') as HTMLInputElement).value.trim();
@@ -1309,7 +1298,6 @@ async function rentTool(toolId: string) {
     document.getElementById('workerSelect')?.focus();
     return;
   }
-  if (!currentUser) return;
 
   const worker = state.staff.find(s => s.id === state.selectedWorkerId);
   const workerLabel = worker ? `${worker.name} (${worker.role})` : '미등록 직원';
@@ -1331,7 +1319,6 @@ async function rentTool(toolId: string) {
 }
 
 async function returnTool(toolId: string) {
-  if (!currentUser) return;
   try {
     await updateDoc(getDocRef('tools', toolId), {
       status: 'AVAILABLE',
@@ -1346,7 +1333,6 @@ async function returnTool(toolId: string) {
 }
 
 async function toggleToolRepair(toolId: string) {
-  if (!currentUser) return;
   const tool = state.tools.find(t => t.id === toolId);
   if (!tool) return;
   const nextStatus = tool.status === 'REPAIR' ? 'AVAILABLE' : 'REPAIR';
@@ -1365,7 +1351,6 @@ async function toggleToolRepair(toolId: string) {
 
 function promptDeleteTool(toolId: string) {
   openConfirmModal('공구 삭제', '이 공구를 대장에서 삭제하시겠습니까?', async () => {
-    if (!currentUser) return;
     await deleteDoc(getDocRef('tools', toolId));
     showToast('공구가 삭제되었습니다.', 'info');
   });
@@ -1691,7 +1676,6 @@ async function handleVendorSmartFile(e: Event) {
 }
 
 async function confirmBatchVendorImport() {
-  if (!currentUser) return;
   const selected = state.pendingVendorImports.filter(i => i.checked && i.name && i.phone);
   if (selected.length === 0) {
     showToast('등록할 업체를 1개 이상 선택해 주세요.', 'error');
@@ -1755,7 +1739,6 @@ function setVendorCategory(cat: string) {
 
 async function handleAddVendor(e: Event) {
   e.preventDefault();
-  if (!currentUser) return;
   const scope = (document.getElementById('newVendorScope') as HTMLSelectElement).value;
   const category = (document.getElementById('newVendorCategory') as HTMLSelectElement).value;
   const name = (document.getElementById('newVendorName') as HTMLInputElement).value.trim();
@@ -1792,7 +1775,6 @@ async function handleAddVendor(e: Event) {
 }
 
 async function toggleVendorFavorite(vendorId: string) {
-  if (!currentUser) return;
   const v = state.vendors.find(item => item.id === vendorId);
   if (!v) return;
   try {
@@ -1829,7 +1811,6 @@ function copyVendorInfo(name: string, phone: string) {
 
 function promptDeleteVendor(vendorId: string) {
   openConfirmModal('수리업체 삭제', '이 업체 연락처를 목록에서 삭제하시겠습니까?', async () => {
-    if (!currentUser) return;
     await deleteDoc(getDocRef('vendors', vendorId));
     showToast('업체 연락처가 삭제되었습니다.', 'info');
   });
@@ -1922,7 +1903,7 @@ async function sendChatMessage(text: string) {
     document.getElementById('workerSelect')?.focus();
     return;
   }
-  if (!currentUser || !text.trim()) return;
+  if (!text.trim()) return;
 
   const worker = state.staff.find(s => s.id === state.selectedWorkerId);
   const senderName = worker ? `${worker.name} (${worker.role})` : '미등록 직원';
@@ -1959,7 +1940,6 @@ async function sendQuickChat(phrase: string) {
 }
 
 async function deleteChatMessage(chatId: string) {
-  if (!currentUser) return;
   try {
     await deleteDoc(getDocRef('chats', chatId));
     showToast('메시지가 삭제되었습니다.', 'info');
@@ -2075,7 +2055,6 @@ function nextBanner() {
 async function toggleBannerGlobal(enabled: boolean) {
   state.bannersEnabled = enabled;
   renderHomeBanner();
-  if (!currentUser) return;
   try {
     await setDoc(getDocRef('settings', 'bannerConfig'), { enabled });
     showToast(enabled ? '첫 화면 배너가 켜졌습니다.' : '첫 화면 배너가 숨겨졌습니다.', 'info');
@@ -2086,7 +2065,6 @@ async function toggleBannerGlobal(enabled: boolean) {
 
 async function handleAddBanner(e: Event) {
   e.preventDefault();
-  if (!currentUser) return;
   const category = (document.getElementById('bannerCategory') as HTMLSelectElement).value;
   const date = (document.getElementById('bannerDate') as HTMLInputElement).value;
   const time = (document.getElementById('bannerTime') as HTMLInputElement).value;
@@ -2121,7 +2099,6 @@ async function handleAddBanner(e: Event) {
 
 function promptDeleteBanner(id: string) {
   openConfirmModal('배너 삭제', '이 행사·경조사 배너를 삭제하시겠습니까?', async () => {
-    if (!currentUser) return;
     await deleteDoc(getDocRef('banners', id));
     showToast('배너가 삭제되었습니다.', 'info');
   });
@@ -2211,7 +2188,6 @@ function updateAdminUI() {
 
 async function handleAddStaff(e: Event) {
   e.preventDefault();
-  if (!currentUser) return;
   const nameInput = document.getElementById('newStaffName') as HTMLInputElement;
   const roleInput = document.getElementById('newStaffRole') as HTMLInputElement;
   const name = nameInput.value.trim();
@@ -2252,7 +2228,6 @@ function closeEditStaffModal() {
 
 async function saveEditedStaff(e: Event) {
   e.preventDefault();
-  if (!currentUser) return;
   const id = (document.getElementById('editStaffId') as HTMLInputElement).value;
   const name = (document.getElementById('editStaffNameInput') as HTMLInputElement).value.trim();
   const role = (document.getElementById('editStaffRoleInput') as HTMLInputElement).value.trim();
@@ -2273,7 +2248,6 @@ function promptDeleteStaff(staffId: string) {
   if (!target) return;
 
   openConfirmModal('직원 삭제', `${target.name} (${target.role}) 직원을 명단에서 삭제하시겠습니까?`, async () => {
-    if (!currentUser) return;
     await deleteDoc(getDocRef('staff', staffId));
     if (state.selectedWorkerId === staffId) state.selectedWorkerId = '';
     if (state.filterWorkerId === staffId) state.filterWorkerId = 'ALL';
@@ -2350,7 +2324,6 @@ function downloadCSV() {
 
 function clearAllDataPrompt() {
   openConfirmModal('전체 데이터 초기화', '클라우드 서버에 저장된 모든 일지, 공지, 채팅 내역이 초기화됩니다. 계속하시겠습니까?', async () => {
-    if (!currentUser) return;
     for (const l of state.logs) await deleteDoc(getDocRef('logs', l.id));
     for (const h of state.handovers) await deleteDoc(getDocRef('handovers', h.id));
     for (const c of state.chats) await deleteDoc(getDocRef('chats', c.id));
