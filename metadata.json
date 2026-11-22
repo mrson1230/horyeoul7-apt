@@ -1,0 +1,6 @@
+{
+  "name": "호려울마을 7단지 공동 작업일지",
+  "description": "호려울마을 7단지 관리사무소 직원 공동 작업일지, 인수인계, 공구관리, 수리업체, 실시간 채팅 시스템",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
