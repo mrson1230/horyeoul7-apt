@@ -434,12 +434,13 @@ function switchTab(tabId: string) {
     const btn = document.getElementById(`nav-${t}`);
     if (t === tabId) {
       sec?.classList.remove('hidden');
-      if (btn) btn.className = 'relative flex-1 min-w-0 py-1.5 sm:py-2 px-0.5 rounded-xl bg-brand-600 text-white flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 font-bold shadow-sm transition-all duration-200';
+      if (btn) btn.className = 'relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl bg-brand-600 text-white flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-bold shadow-sm transition-all duration-200';
     } else {
       sec?.classList.add('hidden');
-      if (btn) btn.className = 'relative flex-1 min-w-0 py-1.5 sm:py-2 px-0.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 font-semibold transition-all duration-200';
+      if (btn) btn.className = 'relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-semibold transition-all duration-200';
     }
   });
+  if (tabId !== 'write') stopVoiceInput();
   if (tabId === 'logs') renderLogs();
   if (tabId === 'plans') renderPlans();
   if (tabId === 'leave') renderLeaves();
@@ -606,8 +607,150 @@ function clearPhoto() {
   document.getElementById('photoPreviewBox')?.classList.add('hidden');
 }
 
+let activeVoiceRecognition: any = null;
+let activeVoiceFieldId: string | null = null;
+let isManualVoiceStop = false;
+
+function updateVoiceButtonUI(fieldId: string, listening: boolean, interimText = '') {
+  const btn = document.getElementById(`voiceBtn-${fieldId}`);
+  const statusEl = document.getElementById(`voiceStatus-${fieldId}`);
+  if (btn) {
+    if (listening) {
+      btn.className = 'px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white border border-rose-600 text-[11px] font-bold transition flex items-center gap-1.5 shrink-0 animate-pulse';
+      btn.innerHTML = `<i class="fa-solid fa-stop"></i><span>녹음 중지</span>`;
+    } else {
+      btn.className = 'px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-brand-50 text-slate-700 hover:text-brand-700 border border-slate-200 text-[11px] font-bold transition flex items-center gap-1.5 shrink-0';
+      btn.innerHTML = `<i class="fa-solid fa-microphone text-brand-600"></i><span>음성 입력</span>`;
+    }
+  }
+  if (statusEl) {
+    if (listening) {
+      statusEl.classList.remove('hidden');
+      const textSpan = statusEl.querySelector('span:last-child');
+      if (textSpan) {
+        textSpan.textContent = interimText
+          ? `🎙️ 인식 중: "${interimText}"`
+          : '🎙️ 듣고 있습니다... 말씀해 주세요. (완료 시 중지 클릭)';
+      }
+    } else {
+      statusEl.classList.add('hidden');
+    }
+  }
+}
+
+function stopVoiceInput() {
+  if (activeVoiceRecognition) {
+    isManualVoiceStop = true;
+    try {
+      activeVoiceRecognition.stop();
+    } catch (e) {
+      console.warn(e);
+    }
+    activeVoiceRecognition = null;
+  }
+  if (activeVoiceFieldId) {
+    updateVoiceButtonUI(activeVoiceFieldId, false);
+    activeVoiceFieldId = null;
+  }
+}
+
+function toggleVoiceInput(fieldId: string) {
+  if (activeVoiceFieldId === fieldId) {
+    stopVoiceInput();
+    showToast('음성 입력을 종료했습니다.', 'info');
+    return;
+  }
+
+  if (activeVoiceRecognition) {
+    stopVoiceInput();
+  }
+
+  const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  if (!SpeechRec) {
+    showToast('이 브라우저는 음성 인식을 지원하지 않습니다. Chrome 또는 모바일 브라우저를 이용해 주세요.', 'error');
+    return;
+  }
+
+  try {
+    const recognition = new SpeechRec();
+    recognition.lang = 'ko-KR';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    isManualVoiceStop = false;
+    activeVoiceRecognition = recognition;
+    activeVoiceFieldId = fieldId;
+    updateVoiceButtonUI(fieldId, true);
+
+    recognition.onresult = (event: any) => {
+      let finalTranscript = '';
+      let interimTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const res = event.results[i];
+        const txt = res[0]?.transcript || '';
+        if (res.isFinal) {
+          finalTranscript += txt;
+        } else {
+          interimTranscript += txt;
+        }
+      }
+
+      if (finalTranscript.trim()) {
+        const textarea = document.getElementById(fieldId) as HTMLTextAreaElement | null;
+        if (textarea) {
+          const cur = textarea.value;
+          const sep = cur.length > 0 && !/\s$/.test(cur) ? ' ' : '';
+          textarea.value = cur + sep + finalTranscript.trim();
+          textarea.scrollTop = textarea.scrollHeight;
+        }
+      }
+
+      if (activeVoiceFieldId === fieldId) {
+        updateVoiceButtonUI(fieldId, true, interimTranscript.trim());
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      const errType = event?.error || '';
+      if (errType === 'aborted' && isManualVoiceStop) return;
+      if (errType === 'not-allowed' || errType === 'service-not-allowed') {
+        showToast('마이크 사용 권한이 거부되었습니다. 브라우저 설정에서 마이크를 허용해 주세요.', 'error');
+      } else if (errType === 'no-speech') {
+        showToast('음성이 감지되지 않았습니다. 마이크 가까이에서 다시 말씀해 주세요.', 'info');
+      } else {
+        showToast(`음성 인식 오류 (${errType || '알 수 없음'})`, 'error');
+      }
+      if (activeVoiceFieldId === fieldId) {
+        updateVoiceButtonUI(fieldId, false);
+        activeVoiceFieldId = null;
+        activeVoiceRecognition = null;
+      }
+    };
+
+    recognition.onend = () => {
+      if (activeVoiceFieldId === fieldId) {
+        updateVoiceButtonUI(fieldId, false);
+        activeVoiceFieldId = null;
+        activeVoiceRecognition = null;
+      }
+      isManualVoiceStop = false;
+    };
+
+    recognition.start();
+    showToast('음성 인식이 시작되었습니다. 말씀해 주세요.', 'success');
+  } catch (err) {
+    console.error('SpeechRecognition start failed:', err);
+    updateVoiceButtonUI(fieldId, false);
+    activeVoiceFieldId = null;
+    activeVoiceRecognition = null;
+    showToast('음성 인식을 시작할 수 없습니다. 마이크 연결을 확인해 주세요.', 'error');
+  }
+}
+
 async function submitWorkLog(e: Event) {
   e.preventDefault();
+  stopVoiceInput();
   const worker = getSelectedWorker();
   if (!worker) {
     showToast('상단에서 작업자 본인의 이름을 먼저 선택해 주세요!', 'error');
@@ -3965,7 +4108,7 @@ Object.assign(window, {
   handleLogin, handleLogout,
   handleWorkerChange, switchTab,
   cycleBanner, toggleBannerGlobal, handleAddBanner, deleteBanner,
-  selectLogCategory, setQuickLocation, handlePhotoUpload, clearPhoto, submitWorkLog,
+  selectLogCategory, setQuickLocation, handlePhotoUpload, clearPhoto, toggleVoiceInput, submitWorkLog,
   setLogCategoryFilter, setWorkerFilter, setLogViewMode, changeCalendarMonth, goCalendarToday, selectCalendarDate, clearCalendarSelectedDate,
   openEditModal, closeEditModal, saveEditedLog, confirmDeleteLog, renderLogs, downloadFilteredLogsPDF,
   togglePlanAddForm, setPlanPeriodType, shiftPlanPeriod, resetPlanPeriodToday, handleAddPlan, togglePlanDone, deletePlan, sendPlanToWorkLog,
