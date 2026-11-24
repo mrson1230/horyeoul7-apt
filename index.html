@@ -23,7 +23,7 @@
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col items-center justify-between overflow-x-hidden">
 
-  <!-- RESPONSIVE APP CONTAINER (Mobile Full-Width -> PC Max-5XL Wide Dashboard) -->
+  <!-- RESPONSIVE APP CONTAINER -->
   <div id="appContainer" class="w-full max-w-4xl bg-white min-h-screen shadow-2xl flex flex-col relative pb-28">
 
     <!-- LOGIN SCREEN OVERLAY -->
@@ -57,7 +57,7 @@
               <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                 <i class="fa-solid fa-lock text-sm"></i>
               </span>
-              <input type="password" id="loginPw" value="1234" placeholder="비밀번호 입력" required class="w-full pl-9 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
+              <input type="password" id="loginPw" placeholder="비밀번호 입력" required class="w-full pl-9 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
             </div>
           </div>
 
@@ -66,11 +66,8 @@
           </button>
         </form>
 
-        <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-          <span>기본 계정: horyeoul7 / 1234</span>
-          <button type="button" onclick="autoFillDemoLogin()" class="text-brand-400 hover:text-brand-300 underline font-medium">
-            체험용 자동채우기
-          </button>
+        <div class="mt-4 pt-3 border-t border-slate-800 text-center text-xs text-slate-400">
+          호려울마을 7단지 관리사무소 직원 전용 시스템
         </div>
       </div>
     </div>
@@ -122,11 +119,8 @@
 
       <!-- TAB 1: WRITE WORK LOG -->
       <section id="tab-write" class="max-w-2xl mx-auto space-y-4">
-        <!-- HOME EVENT / CONDOLENCE BANNER -->
         <div id="homeEventBannerWrapper" class="hidden">
-          <div id="homeEventBannerCard" class="rounded-2xl p-3.5 shadow-sm border transition-all relative overflow-hidden">
-            <!-- Rendered dynamically by renderHomeBanner() -->
-          </div>
+          <div id="homeEventBannerCard" class="rounded-2xl p-3.5 shadow-sm border transition-all relative overflow-hidden"></div>
         </div>
 
         <div id="workerAlertBanner" class="bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-start gap-2.5 text-amber-800 text-xs">
@@ -147,18 +141,30 @@
             </span>
           </div>
 
-          <!-- Date Input -->
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1.5">작업 날짜</label>
             <input type="date" id="logDate" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
           </div>
 
-          <!-- Location Input with Quick Presets -->
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1.5">작업 장소</label>
-            <input type="text" id="logLocation" placeholder="예: 701동 지하주차장, 중앙기계실 등" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
-            
-            <!-- Quick Location Chips -->
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">민원 · 작업 구분</label>
+            <input type="hidden" id="logCategory" value="공용민원">
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" onclick="selectLogCategory('공용민원')" id="logCatBtn-공용민원" class="py-2.5 px-2 rounded-xl bg-brand-600 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1">
+                <span>🏢 공용민원</span>
+              </button>
+              <button type="button" onclick="selectLogCategory('세대민원')" id="logCatBtn-세대민원" class="py-2.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1">
+                <span>🏠 세대민원</span>
+              </button>
+              <button type="button" onclick="selectLogCategory('정기점검')" id="logCatBtn-정기점검" class="py-2.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1">
+                <span>🔍 정기점검</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">작업 장소 (동 · 호수 / 공용위치)</label>
+            <input type="text" id="logLocation" placeholder="예: 703동 1204호, 701동 지하주차장, 중앙기계실 등" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
             <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 pb-1">
               <button type="button" onclick="setQuickLocation('701동 지하주차장')" class="shrink-0 px-2.5 py-1 bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-600 rounded-lg text-[11px] font-medium border border-slate-200 transition">701동 지하주차장</button>
               <button type="button" onclick="setQuickLocation('중앙기계실')" class="shrink-0 px-2.5 py-1 bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-600 rounded-lg text-[11px] font-medium border border-slate-200 transition">중앙기계실</button>
@@ -168,38 +174,28 @@
             </div>
           </div>
 
-          <!-- Content Textarea -->
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1.5">처리 내용</label>
-            <textarea id="logContent" rows="4" placeholder="점검 및 보수 처리 내역을 상세히 입력하세요..." required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none resize-none"></textarea>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">민원 내용 (접수 및 확인 사항)</label>
+            <textarea id="logComplaintContent" rows="2" placeholder="접수된 민원 사항이나 점검 사유를 입력하세요..." required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none resize-none"></textarea>
           </div>
 
-          <!-- Photo Upload Section -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">처리 내용 (조치 결과)</label>
+            <textarea id="logContent" rows="3" placeholder="현장 조치 및 보수 처리 결과를 상세히 입력하세요..." required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none resize-none"></textarea>
+          </div>
+
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label class="text-xs font-semibold text-slate-600">작업 완료 사진 (선택)</label>
               <span class="text-[11px] text-slate-400">클라우드 자동 압축 저장</span>
             </div>
 
-            <div class="grid grid-cols-2 gap-2">
-              <label class="cursor-pointer flex flex-col items-center justify-center p-3 border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-xl bg-slate-50 hover:bg-brand-50/40 transition text-center">
-                <i class="fa-solid fa-camera text-brand-600 text-lg mb-1"></i>
-                <span class="text-xs font-semibold text-slate-700">사진 첨부 / 촬영</span>
-                <input type="file" id="logPhotoInput" accept="image/*" onchange="handlePhotoUpload(event)" class="hidden">
-              </label>
+            <label class="cursor-pointer flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-xl bg-slate-50 hover:bg-brand-50/40 transition text-center w-full">
+              <i class="fa-solid fa-camera text-brand-600 text-lg mb-1"></i>
+              <span class="text-xs font-semibold text-slate-700">사진 첨부 / 촬영</span>
+              <input type="file" id="logPhotoInput" accept="image/*" onchange="handlePhotoUpload(event)" class="hidden">
+            </label>
 
-              <div class="flex flex-col justify-center gap-1.5 bg-slate-50 p-2 rounded-xl border border-slate-200">
-                <span class="text-[10px] font-semibold text-slate-500 text-center">빠른 샘플 이미지</span>
-                <div class="grid grid-cols-2 gap-1">
-                  <button type="button" onclick="selectSampleImage('pump')" class="py-1 px-1.5 bg-white border border-slate-200 hover:border-brand-400 rounded text-[10px] font-medium text-slate-700 truncate">펌프점검</button>
-                  <button type="button" onclick="selectSampleImage('led')" class="py-1 px-1.5 bg-white border border-slate-200 hover:border-brand-400 rounded text-[10px] font-medium text-slate-700 truncate">LED센서등</button>
-                  <button type="button" onclick="selectSampleImage('panel')" class="py-1 px-1.5 bg-white border border-slate-200 hover:border-brand-400 rounded text-[10px] font-medium text-slate-700 truncate">배전반</button>
-                  <button type="button" onclick="selectSampleImage('cctv')" class="py-1 px-1.5 bg-white border border-slate-200 hover:border-brand-400 rounded text-[10px] font-medium text-slate-700 truncate">CCTV보수</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Image Preview Container -->
             <div id="photoPreviewBox" class="hidden mt-3 relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
               <img id="photoPreviewImg" src="" alt="미리보기" class="w-full h-44 object-cover">
               <button type="button" onclick="clearPhoto()" class="absolute top-2 right-2 w-7 h-7 bg-slate-900/75 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition shadow">
@@ -209,17 +205,15 @@
             </div>
           </div>
 
-          <!-- Submit Button -->
           <button type="submit" class="w-full py-3.5 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-sm sm:text-base">
             <i class="fa-solid fa-cloud-arrow-up"></i> 작업일지 등록하기
           </button>
         </form>
       </section>
 
-      <!-- TAB 2: ALL WORK LOGS & FILTERING -->
+      <!-- TAB 2: ALL WORK LOGS & CALENDAR VIEW -->
       <section id="tab-logs" class="hidden space-y-4">
         <div class="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-3">
-          <!-- 보기 방식 전환 (목록 보기 vs 달력 보기) -->
           <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs">
             <button type="button" onclick="setLogViewMode('LIST')" id="logViewBtn-LIST" class="py-2 px-2 rounded-lg bg-brand-600 text-white font-extrabold shadow-xs transition flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-list"></i> 전체 목록 보기
@@ -231,7 +225,37 @@
 
           <div class="relative">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
-            <input type="text" id="searchInput" oninput="renderLogs()" placeholder="장소, 내용, 작성자 검색..." class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <input type="text" id="searchInput" oninput="renderLogs()" placeholder="장소, 민원내용, 처리내용, 작성자 검색..." class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+          </div>
+
+          <div>
+            <div class="text-[11px] sm:text-xs font-semibold text-slate-500 mb-1.5 flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid fa-tags text-brand-600"></i>
+                <span>카테고리별 필터 (민원 구분):</span>
+              </span>
+              <button type="button" id="logCatResetBtn" onclick="setLogCategoryFilter('ALL')" class="hidden text-[11px] font-bold text-slate-500 hover:text-brand-600 transition flex items-center gap-1">
+                <i class="fa-solid fa-rotate-left"></i> 전체 보기
+              </button>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-slate-100 p-1 rounded-xl text-[11px] sm:text-xs">
+              <button type="button" onclick="setLogCategoryFilter('ALL')" id="logCatFilter-ALL" class="py-2 px-2 rounded-lg bg-navy-800 text-white font-bold shadow-xs transition flex items-center justify-center gap-1 whitespace-nowrap">
+                <span>전체</span>
+                <span id="logCatCount-ALL" class="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-extrabold">0</span>
+              </button>
+              <button type="button" onclick="setLogCategoryFilter('공용민원')" id="logCatFilter-공용민원" class="py-2 px-2 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition flex items-center justify-center gap-1 whitespace-nowrap">
+                <span>🏢 공용민원</span>
+                <span id="logCatCount-공용민원" class="px-1.5 py-0.2 rounded-full bg-slate-200/80 text-slate-600 text-[10px] font-extrabold">0</span>
+              </button>
+              <button type="button" onclick="setLogCategoryFilter('세대민원')" id="logCatFilter-세대민원" class="py-2 px-2 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition flex items-center justify-center gap-1 whitespace-nowrap">
+                <span>🏠 세대민원</span>
+                <span id="logCatCount-세대민원" class="px-1.5 py-0.2 rounded-full bg-slate-200/80 text-slate-600 text-[10px] font-extrabold">0</span>
+              </button>
+              <button type="button" onclick="setLogCategoryFilter('정기점검')" id="logCatFilter-정기점검" class="py-2 px-2 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition flex items-center justify-center gap-1 whitespace-nowrap">
+                <span>🔍 정기점검</span>
+                <span id="logCatCount-정기점검" class="px-1.5 py-0.2 rounded-full bg-slate-200/80 text-slate-600 text-[10px] font-extrabold">0</span>
+              </button>
+            </div>
           </div>
 
           <div>
@@ -239,13 +263,10 @@
               <span>작성자별 필터:</span>
               <span id="logCountBadge" class="text-brand-600 font-bold">총 0건</span>
             </div>
-            <div id="workerFilterChips" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
-              <!-- Rendered via JS -->
-            </div>
+            <div id="workerFilterChips" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1"></div>
           </div>
         </div>
 
-        <!-- 달력 뷰 영역 -->
         <div id="logCalendarWrapper" class="hidden bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-3">
           <div class="flex items-center justify-between">
             <button type="button" onclick="changeCalendarMonth(-1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition">
@@ -262,7 +283,6 @@
             </button>
           </div>
 
-          <!-- 요일 헤더 -->
           <div class="grid grid-cols-7 text-center text-[11px] font-bold py-1 border-b border-slate-100">
             <span class="text-rose-500">일</span>
             <span class="text-slate-600">월</span>
@@ -273,12 +293,8 @@
             <span class="text-blue-600">토</span>
           </div>
 
-          <!-- 날짜 그리드 -->
-          <div id="calendarGrid" class="grid grid-cols-7 gap-1">
-            <!-- Rendered via JS -->
-          </div>
+          <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
 
-          <!-- 선택된 날짜 안내 바 -->
           <div class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 flex items-center justify-between gap-2 text-xs">
             <span id="calendarSelectedDateLabel" class="font-extrabold text-slate-800">
               <i class="fa-solid fa-calendar-check text-brand-600 mr-1"></i>선택 날짜: 전체
@@ -289,14 +305,226 @@
           </div>
         </div>
 
-        <div id="logsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-          <!-- Dynamic Log Cards -->
+        <div id="logsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="min-w-0 space-y-0.5">
+            <div class="text-xs sm:text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
+              <i class="fa-solid fa-file-pdf text-rose-600 shrink-0"></i>
+              <span>작업일지 요약본 PDF 다운로드</span>
+            </div>
+            <p id="logsPdfSummaryInfo" class="text-[11px] sm:text-xs text-slate-500 truncate">
+              현재 필터 조건: 전체 · 총 0건의 요약 보고서를 PDF로 저장합니다.
+            </p>
+          </div>
+          <button type="button" id="downloadLogsPdfBtn" onclick="downloadFilteredLogsPDF()" class="w-full sm:w-auto px-4 py-2.5 bg-navy-800 hover:bg-navy-700 active:bg-navy-900 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-xs sm:text-sm shrink-0 whitespace-nowrap">
+            <i class="fa-solid fa-file-arrow-down text-rose-400"></i>
+            <span>요약본 PDF 다운로드</span>
+          </button>
         </div>
       </section>
 
-      <!-- TAB: HANDOVER & NOTICE (공지 및 인수인계) -->
-      <section id="tab-handover" class="hidden space-y-4">
+      <!-- TAB: WORK PLANS -->
+      <section id="tab-plans" class="hidden space-y-4">
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
+            <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2 min-w-0">
+              <i class="fa-solid fa-calendar-check text-brand-600 shrink-0"></i> <span class="truncate">관리사무소 업무계획표</span>
+            </h3>
+            <button type="button" onclick="togglePlanAddForm()" class="px-2.5 py-1.5 bg-navy-800 hover:bg-navy-700 text-white rounded-lg text-[11px] sm:text-xs font-bold transition flex items-center gap-1 shrink-0 whitespace-nowrap">
+              <i class="fa-solid fa-plus"></i> 계획 등록
+            </button>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs">
+            <button type="button" onclick="setPlanPeriodType('DAILY')" id="planType-DAILY" class="py-2 px-1 rounded-lg bg-brand-600 text-white font-extrabold shadow-xs transition">📅 일일계획</button>
+            <button type="button" onclick="setPlanPeriodType('WEEKLY')" id="planType-WEEKLY" class="py-2 px-1 rounded-lg text-slate-600 hover:text-slate-900 font-bold transition">📆 주간계획</button>
+            <button type="button" onclick="setPlanPeriodType('MONTHLY')" id="planType-MONTHLY" class="py-2 px-1 rounded-lg text-slate-600 hover:text-slate-900 font-bold transition">🗓️ 월간계획</button>
+          </div>
+
+          <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 gap-2">
+            <button type="button" onclick="shiftPlanPeriod(-1)" class="w-8 h-8 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center transition shrink-0">
+              <i class="fa-solid fa-chevron-left text-xs"></i>
+            </button>
+            <div class="text-center min-w-0 flex-1">
+              <span id="planPeriodTitle" class="text-xs sm:text-sm font-extrabold text-slate-800 block truncate">일일 업무계획</span>
+              <span id="planPeriodSub" class="text-[10px] sm:text-[11px] text-slate-500 block truncate">예정된 점검 및 작업 목록</span>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button type="button" onclick="resetPlanPeriodToday()" class="px-2 py-1 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-lg text-[10px] font-bold transition">오늘</button>
+              <button type="button" onclick="shiftPlanPeriod(1)" class="w-8 h-8 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center transition">
+                <i class="fa-solid fa-chevron-right text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex items-center justify-between text-[11px] font-bold">
+              <span class="text-slate-600">계획 달성률 (<span id="planDoneRatio">0 / 0건</span>)</span>
+              <span id="planPercentLabel" class="text-brand-600">0%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div id="planProgressBar" class="h-full bg-brand-600 transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <form id="planAddForm" onsubmit="handleAddPlan(event)" class="hidden space-y-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <div class="text-xs font-bold text-slate-700 flex items-center justify-between">
+              <span id="planFormHeader"><i class="fa-solid fa-pen text-brand-600 mr-1"></i>새 업무계획 등록</span>
+              <button type="button" onclick="togglePlanAddForm()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">계획 구분</label>
+                <select id="newPlanType" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800">
+                  <option value="DAILY">📅 일일계획</option>
+                  <option value="WEEKLY">📆 주간계획</option>
+                  <option value="MONTHLY">🗓️ 월간계획</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">기준 날짜 (달력)</label>
+                <input type="date" id="newPlanDate" required class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">담당 파트 / 담당자</label>
+                <input type="text" id="newPlanAssignee" placeholder="예: 시설팀 / 김철수" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs">
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">장소 / 대상 (선택)</label>
+                <input type="text" id="newPlanLocation" placeholder="예: 전 동 지하주차장" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs">
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">업무 계획 내용</label>
+                <input type="text" id="newPlanTitle" placeholder="예: 동절기 배관 보온재 및 열선 작동 상태 일제 점검" required class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold">
+              </div>
+            </div>
+            <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs sm:text-sm shadow transition">
+              업무계획표에 등록하기
+            </button>
+          </form>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-800 text-white text-[11px] sm:text-xs">
+                  <th class="py-2.5 px-2.5 sm:px-3.5 text-center w-12">완료</th>
+                  <th class="py-2.5 px-2 sm:px-3 w-24 sm:w-28">일정/기준일</th>
+                  <th class="py-2.5 px-2 sm:px-3">계획 업무 내용</th>
+                  <th class="py-2.5 px-2 sm:px-3 w-24 sm:w-28">담당</th>
+                  <th class="py-2.5 px-2 text-center w-16">관리</th>
+                </tr>
+              </thead>
+              <tbody id="plansTableBody" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: LEAVE / VACATION -->
+      <section id="tab-leave" class="hidden space-y-4">
+        <div class="bg-gradient-to-r from-indigo-900 to-slate-800 text-white rounded-2xl p-4 shadow-md border border-indigo-700/60 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="px-2.5 py-0.5 bg-indigo-500/30 border border-indigo-400/40 text-indigo-100 text-[11px] font-extrabold rounded-full">
+              <i class="fa-solid fa-umbrella-beach mr-1"></i>오늘 휴가 · 반차 현황
+            </span>
+            <span id="leaveTodayDateLabel" class="text-[11px] text-slate-300 font-semibold"></span>
+          </div>
+          <div id="todayLeaveSummaryBox" class="text-xs sm:text-sm font-bold text-white leading-relaxed">
+            오늘 연차·반차·휴가 중인 직원이 없습니다. (전원 정상 근무)
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+          <div class="md:col-span-5 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-file-signature text-brand-600 shrink-0"></i> 연차 · 휴가 신청서 작성
+              </h3>
+              <span id="leaveAuthorTag" class="text-[11px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full truncate max-w-[120px]">
+                신청자: 미선택
+              </span>
+            </div>
+
+            <form onsubmit="submitLeaveRequest(event)" class="space-y-2.5">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">휴가 구분</label>
+                  <select id="leaveType" onchange="updateLeaveDaysCalc()" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <option value="연차">🌴 연차 (종일)</option>
+                    <option value="오전반차">🌅 오전반차 (0.5일)</option>
+                    <option value="오후반차">🌇 오후반차 (0.5일)</option>
+                    <option value="여름휴가">☀️ 여름휴가 (하계휴가)</option>
+                    <option value="대체휴무">🔄 당직·대체휴무</option>
+                    <option value="병가">🏥 병가</option>
+                    <option value="경조휴가">💐 경조·공가</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">사용 일수</label>
+                  <input type="text" id="leaveDaysDisplay" value="1일" readonly class="w-full px-2.5 py-2 bg-brand-50 border border-brand-200 rounded-xl text-xs font-extrabold text-brand-800 text-center">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">시작일 (달력)</label>
+                  <input type="date" id="leaveStartDate" onchange="syncLeaveEndDate()" required class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">종료일 (달력)</label>
+                  <input type="date" id="leaveEndDate" onchange="updateLeaveDaysCalc()" required class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">사유 및 업무 대행자</label>
+                <textarea id="leaveReason" rows="2" placeholder="예: 개인 가사 사유 / 당일 기전 업무 담당자 대행" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 resize-none focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">비상 연락처 (선택)</label>
+                <input type="tel" id="leavePhone" placeholder="예: 010-0000-0000" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+
+              <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm">
+                <i class="fa-solid fa-paper-plane"></i> 신청서 제출하기 (보관 및 출력)
+              </button>
+            </form>
+          </div>
+
+          <div class="md:col-span-7 space-y-3">
+            <div class="flex items-center justify-between gap-2 px-1">
+              <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs">
+                <button type="button" onclick="setLeaveFilter('ALL')" id="leave-filter-ALL" class="px-2.5 py-1.5 rounded-lg bg-navy-800 text-white font-bold transition whitespace-nowrap">전체 내역</button>
+                <button type="button" onclick="setLeaveFilter('TODAY')" id="leave-filter-TODAY" class="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 font-semibold transition whitespace-nowrap">오늘 휴무자</button>
+                <button type="button" onclick="setLeaveFilter('PENDING')" id="leave-filter-PENDING" class="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 font-semibold transition whitespace-nowrap">결재 대기</button>
+              </div>
+              <span id="leaveCountBadge" class="text-[11px] font-bold text-brand-600 shrink-0 whitespace-nowrap">총 0건</span>
+            </div>
+
+            <div id="leaveListContainer" class="space-y-2.5"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: HANDOVER & NOTICE -->
+      <section id="tab-handover" class="hidden space-y-4">
+        <div class="bg-white border border-slate-200 rounded-2xl p-2 shadow-sm grid grid-cols-2 gap-1.5 text-xs">
+          <button type="button" onclick="setHandoverFolderMode('SHIFT')" id="hoFolderBtn-SHIFT" class="py-2.5 px-2 rounded-xl bg-brand-600 text-white font-extrabold shadow-xs transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-bullhorn"></i> 주·야간 교대 / 공지
+          </button>
+          <button type="button" onclick="setHandoverFolderMode('STAFF_IO')" id="hoFolderBtn-STAFF_IO" class="py-2.5 px-2 rounded-xl text-slate-600 hover:text-slate-900 font-bold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-folder-open text-amber-500"></i> 📂 입사·퇴사 인수인계 폴더
+          </button>
+        </div>
+
+        <!-- SUB-VIEW 1: SHIFT & DAILY NOTICE -->
+        <div id="hoShiftSection" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
           <div class="md:col-span-5 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
               <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
@@ -345,142 +573,464 @@
               <span id="handoverCountBadge" class="text-[11px] font-bold text-brand-600 shrink-0 whitespace-nowrap">총 0건</span>
             </div>
 
-            <div id="handoverContainer" class="space-y-3">
-              <!-- Dynamic Handover Cards -->
+            <div id="handoverContainer" class="space-y-3"></div>
+          </div>
+        </div>
+
+        <!-- SUB-VIEW 2: STAFF ENTRY / RESIGNATION HANDOVER FOLDER -->
+        <div id="hoStaffIoSection" class="hidden grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+          <div class="md:col-span-5 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-folder-plus text-indigo-600 shrink-0"></i> 입사 · 퇴사 인수인계서 등록
+              </h3>
+              <span class="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">영구 보관 폴더</span>
             </div>
+
+            <form onsubmit="submitStaffHandover(event)" class="space-y-2.5">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">인수인계 구분</label>
+                  <select id="shType" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800">
+                    <option value="퇴사자 인계">📤 퇴사자 → 후임자 인계</option>
+                    <option value="신규입사 교육">📥 신규 입사자 업무인수</option>
+                    <option value="보직·파트 변경">🔄 직책 · 담당 변경 인계</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">기준 날짜 (달력)</label>
+                  <input type="date" id="shDate" required class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">인계자 (전임자/퇴사자)</label>
+                  <input type="text" id="shGiver" placeholder="예: 홍길동 기전주임" required class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">인수자 (후임자/입사자)</label>
+                  <input type="text" id="shReceiver" placeholder="예: 김철수 신입주임" required class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">인계 제목 / 담당 파트</label>
+                <input type="text" id="shTitle" placeholder="예: 기전팀 주요 설비·방재실 및 공구함 인수인계" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800">
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">세부 인계 내용 (미처리 민원 · 열쇠 · 비품 · 계정 등)</label>
+                <textarea id="shContent" rows="4" placeholder="1. 진행 중인 세대/공용 미처리 민원&#10;2. 마스터키 및 주요 장비 위치&#10;3. 협력업체 연락처 및 프로그램 비밀번호 등" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 resize-none"></textarea>
+              </div>
+
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-1.5">
+                <span class="text-[11px] font-bold text-slate-700 block">필수 확인 체크항목</span>
+                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                  <input type="checkbox" id="shChkKeys" checked class="w-3.5 h-3.5 text-brand-600 rounded">
+                  <span>마스터키 · 공구 · 비품 반납 및 인계 확인</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                  <input type="checkbox" id="shChkDocs" checked class="w-3.5 h-3.5 text-brand-600 rounded">
+                  <span>진행 중 민원 · 법정점검 서류 및 계정 안내 완료</span>
+                </label>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">인수인계 서류 파일 첨부 (선택: 서명스캔 사진·PDF·엑셀·한글)</label>
+                <label class="cursor-pointer flex items-center justify-center gap-2 p-2.5 border-2 border-dashed border-indigo-300 hover:border-indigo-500 rounded-xl bg-indigo-50/40 text-xs font-bold text-indigo-900">
+                  <i class="fa-solid fa-paperclip"></i>
+                  <span id="shFileLabel">서류 사진 또는 문서 파일 선택</span>
+                  <input type="file" id="shFileInput" accept="image/*,.pdf,.xlsx,.xls,.docx,.hwp,.txt" onchange="handleStaffHandoverFile(event)" class="hidden">
+                </label>
+              </div>
+
+              <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm">
+                <i class="fa-solid fa-folder-plus"></i> 입사·퇴사 인수인계 폴더에 보관하기
+              </button>
+            </form>
+          </div>
+
+          <div class="md:col-span-7 space-y-3">
+            <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs">
+                <button type="button" onclick="setStaffHandoverFilter('ALL')" id="sh-filter-ALL" class="px-2.5 py-1.5 rounded-lg bg-navy-800 text-white font-bold transition whitespace-nowrap">전체 서류</button>
+                <button type="button" onclick="setStaffHandoverFilter('UNCONFIRMED')" id="sh-filter-UNCONFIRMED" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition whitespace-nowrap">인수확인 대기</button>
+                <button type="button" onclick="setStaffHandoverFilter('DONE')" id="sh-filter-DONE" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition whitespace-nowrap">인계완료</button>
+              </div>
+              <span id="shCountBadge" class="text-[11px] font-bold text-indigo-700 shrink-0 whitespace-nowrap">보관 0건</span>
+            </div>
+
+            <div id="staffHandoverListContainer" class="space-y-3"></div>
           </div>
         </div>
       </section>
 
-      <!-- TAB: TOOL MANAGEMENT (공구 관리 대장) -->
+      <!-- TAB: TOOL MANAGEMENT -->
       <section id="tab-tools" class="hidden space-y-4">
-        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
-            <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2 min-w-0">
-              <i class="fa-solid fa-toolbox text-brand-600 shrink-0"></i> <span class="truncate">관리사무소 공구 대장</span>
-            </h3>
-            <div class="flex items-center gap-1.5 shrink-0">
-              <button type="button" onclick="downloadToolsCSV()" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-[11px] sm:text-xs font-bold transition flex items-center gap-1 whitespace-nowrap">
-                <i class="fa-solid fa-file-excel"></i> 엑셀
-              </button>
-              <button type="button" onclick="toggleToolAddForm()" class="px-2.5 py-1.5 bg-navy-800 hover:bg-navy-700 text-white rounded-lg text-[11px] sm:text-xs font-bold transition flex items-center gap-1 whitespace-nowrap">
-                <i class="fa-solid fa-plus"></i> 공구 등록
-              </button>
-            </div>
-          </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-2 shadow-sm grid grid-cols-2 gap-1.5 text-xs">
+          <button type="button" onclick="setToolFolderMode('TOOLS')" id="toolFolderBtn-TOOLS" class="py-2.5 px-2 rounded-xl bg-brand-600 text-white font-extrabold shadow-xs transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-toolbox"></i> 🔧 공구 · 장비 관리 대장
+          </button>
+          <button type="button" onclick="setToolFolderMode('FIRE_DETECTORS')" id="toolFolderBtn-FIRE_DETECTORS" class="relative py-2.5 px-2 rounded-xl text-slate-600 hover:text-slate-900 font-bold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-fire-extinguisher text-rose-500"></i> 🔥 화재감지기 재고 · 교체 폴더
+            <span id="fireDetectorLowDot" class="hidden w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0"></span>
+          </button>
+        </div>
 
-          <div class="grid grid-cols-3 gap-2 text-center">
-            <div class="bg-slate-50 border border-slate-200 rounded-xl p-2 sm:p-3">
-              <span class="text-[10px] sm:text-xs text-slate-500 block font-semibold">전체 보유</span>
-              <strong id="toolTotalCount" class="text-sm sm:text-base font-extrabold text-slate-800">0종</strong>
-            </div>
-            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2 sm:p-3">
-              <span class="text-[10px] sm:text-xs text-emerald-700 block font-semibold">비치 중</span>
-              <strong id="toolAvailableCount" class="text-sm sm:text-base font-extrabold text-emerald-700">0종</strong>
-            </div>
-            <div class="bg-amber-50 border border-amber-200 rounded-xl p-2 sm:p-3">
-              <span class="text-[10px] sm:text-xs text-amber-700 block font-semibold">현장 대여중</span>
-              <strong id="toolRentedCount" class="text-sm sm:text-base font-extrabold text-amber-700">0종</strong>
-            </div>
-          </div>
-
-          <form id="toolAddForm" onsubmit="handleAddTool(event)" class="hidden space-y-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-            <div class="text-xs font-bold text-slate-700 flex items-center justify-between">
-              <span><i class="fa-solid fa-wrench text-brand-600 mr-1"></i>신규 공구 등록</span>
-              <button type="button" onclick="toggleToolAddForm()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <!-- Smart File / Photo / Text Auto-Import Box for Tools -->
-            <div class="bg-teal-50/90 border border-teal-200 rounded-xl p-3 space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] sm:text-xs font-extrabold text-teal-900 flex items-center gap-1">
-                  <i class="fa-solid fa-wand-magic-sparkles text-teal-600 shrink-0"></i> 사진 · 엑셀(문서) 공구 자동 인식
-                </span>
+        <div id="toolLedgerSection" class="space-y-4">
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
+              <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2 min-w-0">
+                <i class="fa-solid fa-toolbox text-brand-600 shrink-0"></i> <span class="truncate">관리사무소 공구 대장</span>
+              </h3>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="downloadToolsCSV()" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-[11px] sm:text-xs font-bold transition flex items-center gap-1 whitespace-nowrap">
+                  <i class="fa-solid fa-file-excel"></i> 엑셀
+                </button>
+                <button type="button" onclick="toggleToolAddForm()" class="px-2.5 py-1.5 bg-navy-800 hover:bg-navy-700 text-white rounded-lg text-[11px] sm:text-xs font-bold transition flex items-center gap-1 whitespace-nowrap">
+                  <i class="fa-solid fa-plus"></i> 공구 등록
+                </button>
               </div>
-              <p class="text-[11px] text-teal-800 leading-relaxed">
-                공구 구매 영수증·거래명세서 <strong>사진</strong>이나 <strong>엑셀(.xlsx/.csv), PDF, 워드(.docx), 텍스트(.txt)</strong> 파일을 선택하면 공구명·보관위치·수량을 자동으로 뽑아 일괄 등록합니다.
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-2 sm:p-3">
+                <span class="text-[10px] sm:text-xs text-slate-500 block font-semibold">전체 보유</span>
+                <strong id="toolTotalCount" class="text-sm sm:text-base font-extrabold text-slate-800">0종</strong>
+              </div>
+              <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2 sm:p-3">
+                <span class="text-[10px] sm:text-xs text-emerald-700 block font-semibold">비치 중</span>
+                <strong id="toolAvailableCount" class="text-sm sm:text-base font-extrabold text-emerald-700">0종</strong>
+              </div>
+              <div class="bg-amber-50 border border-amber-200 rounded-xl p-2 sm:p-3">
+                <span class="text-[10px] sm:text-xs text-amber-700 block font-semibold">현장 대여중</span>
+                <strong id="toolRentedCount" class="text-sm sm:text-base font-extrabold text-amber-700">0종</strong>
+              </div>
+              <button type="button" onclick="setToolFilter('LOW_STOCK')" class="bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl p-2 sm:p-3 transition text-center">
+                <span class="text-[10px] sm:text-xs text-red-700 block font-semibold">⚠️ 재고 부족 (1이하)</span>
+                <strong id="toolLowStockCount" class="text-sm sm:text-base font-extrabold text-red-700">0종</strong>
+              </button>
+            </div>
+
+            <form id="toolAddForm" onsubmit="handleAddTool(event)" class="hidden space-y-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <div class="text-xs font-bold text-slate-700 flex items-center justify-between">
+                <span><i class="fa-solid fa-wrench text-brand-600 mr-1"></i>신규 공구 · 자재 등록</span>
+                <button type="button" onclick="toggleToolAddForm()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+
+              <div class="bg-rose-50/80 border border-rose-200 rounded-xl p-2.5 space-y-1.5">
+                <span class="text-[11px] font-extrabold text-rose-800 block"><i class="fa-solid fa-fire-extinguisher mr-1"></i>화재감지기 간편 등록 (자동 차감 연동)</span>
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" onclick="presetFireDetectorTool('광전식감지기')" class="px-2.5 py-1.5 bg-white hover:bg-rose-100 border border-rose-300 text-rose-800 rounded-lg text-[11px] font-bold transition">
+                    🔥 + 광전식 감지기 채우기
+                  </button>
+                  <button type="button" onclick="presetFireDetectorTool('정온식감지기')" class="px-2.5 py-1.5 bg-white hover:bg-orange-100 border border-orange-300 text-orange-800 rounded-lg text-[11px] font-bold transition">
+                    🌡️ + 정온식 감지기 채우기
+                  </button>
+                </div>
+              </div>
+
+              <div class="bg-teal-50/90 border border-teal-200 rounded-xl p-3 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] sm:text-xs font-extrabold text-teal-900 flex items-center gap-1">
+                    <i class="fa-solid fa-wand-magic-sparkles text-teal-600 shrink-0"></i> 사진 · 엑셀(문서) 공구 자동 인식
+                  </span>
+                </div>
+                <p class="text-[11px] text-teal-800 leading-relaxed">
+                  공구 구매 영수증·거래명세서 <strong>사진</strong>이나 <strong>엑셀(.xlsx/.csv), PDF, 워드(.docx), 텍스트(.txt)</strong> 파일을 선택하면 공구명·보관위치·수량을 자동으로 뽑아 일괄 등록합니다.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <label class="cursor-pointer py-2.5 px-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs text-center shadow-xs transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-file-arrow-up"></i> 사진 · 엑셀/문서 선택
+                    <input type="file" id="toolSmartFileInput" accept="image/*,.xlsx,.xls,.csv,.pdf,.docx,.txt,.hwp" onchange="handleToolSmartFile(event)" class="hidden">
+                  </label>
+                  <button type="button" onclick="toggleToolPasteBox()" class="py-2.5 px-3 bg-white hover:bg-teal-100 text-teal-900 border border-teal-300 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-paste"></i> 한글(HWP)·목록 붙여넣기
+                  </button>
+                </div>
+
+                <div id="toolPasteBox" class="hidden space-y-1.5 pt-1">
+                  <textarea id="toolPasteTextarea" rows="3" placeholder="엑셀이나 한글(HWP) 공구 대장에서 복사한 내용을 붙여넣으세요&#10;예: 보쉬 충전드릴 / 기전실 공구함 / 2세트" class="w-full p-2.5 bg-white border border-teal-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+                  <button type="button" onclick="parseToolRawText()" class="w-full py-2 bg-teal-700 hover:bg-teal-600 text-white font-bold rounded-lg text-xs">
+                    붙여넣은 내용에서 공구 추출하기
+                  </button>
+                </div>
+
+                <div id="toolImportLoading" class="hidden py-2 text-center text-xs font-bold text-teal-800 flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-spinner fa-spin"></i>
+                  <span id="toolImportLoadingText">문서/사진에서 공구 목록을 분석하고 있습니다...</span>
+                </div>
+
+                <div id="toolImportPreviewBox" class="hidden bg-white border border-teal-200 rounded-xl p-2.5 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span id="toolImportCountLabel" class="text-[11px] font-extrabold text-teal-800">0개 공구 자동 추출됨</span>
+                    <button type="button" onclick="clearToolImportPreview()" class="text-[11px] text-slate-400 hover:text-red-500">닫기</button>
+                  </div>
+                  <div id="toolImportPreviewList" class="space-y-1.5"></div>
+                  <button type="button" onclick="confirmBatchToolImport()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow">
+                    <i class="fa-solid fa-check-double mr-1"></i>선택 공구 일괄 등록하기
+                  </button>
+                </div>
+              </div>
+
+              <div class="border-t border-slate-200 pt-2 text-[11px] font-bold text-slate-500">또는 직접 1건 입력 등록</div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">품목 분류</label>
+                <select id="newToolCategory" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                  <option value="일반공구">🔧 일반 공구 · 장비</option>
+                  <option value="광전식감지기">🔥 화재감지기 - 광전식감지기</option>
+                  <option value="정온식감지기">🌡️ 화재감지기 - 정온식감지기</option>
+                </select>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">공구명 / 규격</label>
+                  <input type="text" id="newToolName" placeholder="예: 보쉬 충전해머드릴 18V / 광전식 감지기" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">보관 위치</label>
+                  <input type="text" id="newToolLocation" placeholder="예: 기전실 공구함 1단 / 방재실" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">보유 수량</label>
+                  <input type="text" id="newToolQty" value="1세트" placeholder="예: 1대, 2개, 50개" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">비고 / 구매일 (선택)</label>
+                  <input type="text" id="newToolNote" placeholder="예: 배터리 2개 포함" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                </div>
+              </div>
+              <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs sm:text-sm shadow transition">
+                공구 대장에 등록하기
+              </button>
+            </form>
+
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 pt-1">
+              <div class="relative flex-1">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+                <input type="text" id="toolSearchInput" oninput="renderTools()" placeholder="공구명, 보관위치, 대여자 검색..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+              <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs shrink-0">
+                <button type="button" onclick="setToolFilter('ALL')" id="tool-filter-ALL" class="px-2.5 py-1.5 rounded-lg bg-navy-800 text-white font-bold transition whitespace-nowrap">전체</button>
+                <button type="button" onclick="setToolFilter('AVAILABLE')" id="tool-filter-AVAILABLE" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition whitespace-nowrap">비치 중</button>
+                <button type="button" onclick="setToolFilter('RENTED')" id="tool-filter-RENTED" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition whitespace-nowrap">대여 중</button>
+                <button type="button" onclick="setToolFilter('REPAIR')" id="tool-filter-REPAIR" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition whitespace-nowrap">수리/점검</button>
+                <button type="button" onclick="setToolFilter('LOW_STOCK')" id="tool-filter-LOW_STOCK" class="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 border border-red-200 font-semibold transition whitespace-nowrap">⚠️ 재고부족</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="toolsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+        </div>
+
+        <!-- SUB-VIEW 2: FIRE DETECTOR INVENTORY & REPLACEMENT FOLDER -->
+        <div id="fireDetectorSection" class="hidden space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- 광전식 감지기 현황 카드 -->
+            <div class="bg-white border border-rose-200 rounded-2xl p-4 shadow-sm space-y-3">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <span class="px-2 py-0.5 bg-rose-100 text-rose-800 rounded-md text-[10px] font-extrabold">연기 감지</span>
+                  <h4 class="font-extrabold text-slate-900 text-sm sm:text-base mt-1 flex items-center gap-1.5">
+                    🔥 광전식 감지기
+                  </h4>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] text-slate-500 font-semibold block">현재 총 보유 수량</span>
+                  <strong id="fdPhotoQtyDisplay" class="text-2xl font-black text-rose-700">0개</strong>
+                  <span id="fdPhotoLowBadge" class="hidden mt-1 inline-block px-2 py-0.5 bg-red-600 text-white rounded-md text-[10px] font-extrabold animate-pulse">⚠️ 재고 부족</span>
+                </div>
+              </div>
+              <p id="fdPhotoSourceHint" class="text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-200">공구대장 연동: 등록된 광전식 감지기 없음</p>
+              <div class="flex items-center gap-1.5 pt-1">
+                <input type="number" id="fdPhotoQuickQtyInput" min="1" value="10" class="w-20 px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-center focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                <button type="button" onclick="addDetectorStockFromFolder('광전식감지기')" class="flex-1 py-1.5 px-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1">
+                  <i class="fa-solid fa-plus"></i> 재고 입고(+추가)
+                </button>
+              </div>
+            </div>
+
+            <!-- 정온식 감지기 현황 카드 -->
+            <div class="bg-white border border-orange-200 rounded-2xl p-4 shadow-sm space-y-3">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <span class="px-2 py-0.5 bg-orange-100 text-orange-800 rounded-md text-[10px] font-extrabold">열 감지</span>
+                  <h4 class="font-extrabold text-slate-900 text-sm sm:text-base mt-1 flex items-center gap-1.5">
+                    🌡️ 정온식 감지기
+                  </h4>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] text-slate-500 font-semibold block">현재 총 보유 수량</span>
+                  <strong id="fdHeatQtyDisplay" class="text-2xl font-black text-orange-700">0개</strong>
+                  <span id="fdHeatLowBadge" class="hidden mt-1 inline-block px-2 py-0.5 bg-red-600 text-white rounded-md text-[10px] font-extrabold animate-pulse">⚠️ 재고 부족</span>
+                </div>
+              </div>
+              <p id="fdHeatSourceHint" class="text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-200">공구대장 연동: 등록된 정온식 감지기 없음</p>
+              <div class="flex items-center gap-1.5 pt-1">
+                <input type="number" id="fdHeatQuickQtyInput" min="1" value="10" class="w-20 px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-center focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                <button type="button" onclick="addDetectorStockFromFolder('정온식감지기')" class="flex-1 py-1.5 px-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1">
+                  <i class="fa-solid fa-plus"></i> 재고 입고(+추가)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+            <div class="md:col-span-5 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                  <i class="fa-solid fa-fire text-rose-500"></i> 감지기 교체 입력 (자동 차감)
+                </h3>
+                <span class="text-[10px] font-bold bg-rose-50 text-rose-700 px-2 py-0.5 rounded-full">재고 실시간 연동</span>
+              </div>
+              <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                교체 장소와 수량을 입력하면 공구 대장에 등록된 해당 감지기 총 수량에서 자동으로 차감됩니다. <span class="text-rose-700 font-semibold">(예: 50개 → 1개 교체 시 49개)</span>
               </p>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <label class="cursor-pointer py-2.5 px-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs text-center shadow-xs transition flex items-center justify-center gap-1.5">
-                  <i class="fa-solid fa-file-arrow-up"></i> 사진 · 엑셀/문서 선택
-                  <input type="file" id="toolSmartFileInput" accept="image/*,.xlsx,.xls,.csv,.pdf,.docx,.txt,.hwp" onchange="handleToolSmartFile(event)" class="hidden">
-                </label>
-                <button type="button" onclick="toggleToolPasteBox()" class="py-2.5 px-3 bg-white hover:bg-teal-100 text-teal-900 border border-teal-300 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
-                  <i class="fa-solid fa-paste"></i> 한글(HWP)·목록 붙여넣기
-                </button>
-              </div>
-
-              <div id="toolPasteBox" class="hidden space-y-1.5 pt-1">
-                <textarea id="toolPasteTextarea" rows="3" placeholder="엑셀이나 한글(HWP) 공구 대장에서 복사한 내용을 붙여넣으세요&#10;예: 보쉬 충전드릴 / 기전실 공구함 / 2세트&#10;파이프렌치 350mm, 중앙기계실, 1개" class="w-full p-2.5 bg-white border border-teal-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
-                <button type="button" onclick="parseToolRawText()" class="w-full py-2 bg-teal-700 hover:bg-teal-600 text-white font-bold rounded-lg text-xs">
-                  붙여넣은 내용에서 공구 추출하기
-                </button>
-              </div>
-
-              <div id="toolImportLoading" class="hidden py-2 text-center text-xs font-bold text-teal-800 flex items-center justify-center gap-2">
-                <i class="fa-solid fa-spinner fa-spin"></i>
-                <span id="toolImportLoadingText">문서/사진에서 공구 목록을 분석하고 있습니다...</span>
-              </div>
-
-              <div id="toolImportPreviewBox" class="hidden bg-white border border-teal-200 rounded-xl p-2.5 space-y-2">
-                <div class="flex items-center justify-between">
-                  <span id="toolImportCountLabel" class="text-[11px] font-extrabold text-teal-800">0개 공구 자동 추출됨</span>
-                  <button type="button" onclick="clearToolImportPreview()" class="text-[11px] text-slate-400 hover:text-red-500">닫기</button>
+              <form onsubmit="submitDetectorReplacement(event)" class="space-y-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">교체 날짜</label>
+                    <input type="date" id="fdReplaceDate" required class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">교체 수량</label>
+                    <input type="number" id="fdReplaceQty" min="1" value="1" required class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                  </div>
                 </div>
-                <div id="toolImportPreviewList" class="space-y-1.5"></div>
-                <button type="button" onclick="confirmBatchToolImport()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow">
-                  <i class="fa-solid fa-check-double mr-1"></i>선택 공구 일괄 등록하기
+
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">감지기 종류</label>
+                  <select id="fdReplaceType" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <option value="광전식감지기">🔥 광전식감지기</option>
+                    <option value="정온식감지기">🌡️ 정온식감지기</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">교체 위치 (동·층·세대/구역)</label>
+                  <input type="text" id="fdReplaceLocation" placeholder="예: 701동 1층 계단" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                  <div class="flex flex-wrap gap-1 mt-1.5">
+                    <button type="button" onclick="setFdLocationQuick('701동 1층 계단')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-semibold">701동 1층 계단</button>
+                    <button type="button" onclick="setFdLocationQuick('702동 1층 계단')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-semibold">702동 1층 계단</button>
+                    <button type="button" onclick="setFdLocationQuick('703동 1층 계단')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-semibold">703동 1층 계단</button>
+                    <button type="button" onclick="setFdLocationQuick('지하주차장')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-semibold">지하주차장</button>
+                    <button type="button" onclick="setFdLocationQuick('기계실/전기실')" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-semibold">기계실/전기실</button>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">교체 사유 / 비고 (선택)</label>
+                  <input type="text" id="fdReplaceNote" placeholder="예: 비화재보 오작동으로 교체" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                </div>
+
+                <button type="submit" class="w-full py-2.5 bg-navy-800 hover:bg-navy-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow transition flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-arrows-rotate"></i> 교체 입력 &amp; 재고 자동 차감
                 </button>
-              </div>
+              </form>
             </div>
 
-            <div class="border-t border-slate-200 pt-2 text-[11px] font-bold text-slate-500">또는 직접 1건 입력 등록</div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">공구명 / 규격</label>
-                <input type="text" id="newToolName" placeholder="예: 보쉬 충전해머드릴 18V" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <div class="md:col-span-7 space-y-3">
+              <!-- 상단 기간별 교체 요약 카드 -->
+              <div class="bg-gradient-to-r from-rose-50 via-white to-orange-50 border border-rose-200 rounded-2xl p-3.5 shadow-sm space-y-2">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <div class="flex items-center gap-1.5">
+                    <span class="px-2 py-0.5 bg-rose-600 text-white rounded-md text-[10px] font-extrabold">기간 요약</span>
+                    <span id="fdSummaryPeriodLabel" class="text-xs font-extrabold text-slate-800">전체 기간 교체 현황</span>
+                  </div>
+                  <button type="button" onclick="resetFdFilters()" class="px-2 py-1 bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
+                    <i class="fa-solid fa-rotate-left"></i> 필터 초기화
+                  </button>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                  <div class="bg-white/90 border border-rose-100 rounded-xl p-2">
+                    <span class="text-[10px] text-slate-500 font-semibold block">기간 총 교체 건수</span>
+                    <strong id="fdSummaryEventCount" class="text-base sm:text-lg font-black text-rose-700">0건</strong>
+                  </div>
+                  <div class="bg-white/90 border border-orange-100 rounded-xl p-2">
+                    <span class="text-[10px] text-slate-500 font-semibold block">기간 총 교체 수량</span>
+                    <strong id="fdSummaryUnitCount" class="text-base sm:text-lg font-black text-navy-800">0개</strong>
+                  </div>
+                  <div class="bg-white/90 border border-slate-200 rounded-xl p-2">
+                    <span class="text-[10px] text-slate-500 font-semibold block">검색 필터 결과</span>
+                    <strong id="fdSummaryFilteredCount" class="text-base sm:text-lg font-black text-brand-700">0건</strong>
+                  </div>
+                </div>
+                <div id="fdSummaryBreakdown" class="text-[11px] font-semibold text-slate-600 flex items-center justify-between flex-wrap gap-1 px-0.5">
+                  <span>🔥 광전식: 0건 (0개) · 🌡️ 정온식: 0건 (0개)</span>
+                </div>
               </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">보관 위치</label>
-                <input type="text" id="newToolLocation" placeholder="예: 기전실 공구함 1단" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-              </div>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">보유 수량</label>
-                <input type="text" id="newToolQty" value="1세트" placeholder="예: 1대, 2개" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-              </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">비고 / 구매일 (선택)</label>
-                <input type="text" id="newToolNote" placeholder="예: 배터리 2개 포함" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-              </div>
-            </div>
-            <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs sm:text-sm shadow transition">
-              공구 대장에 등록하기
-            </button>
-          </form>
 
-          <div class="flex flex-col sm:flex-row sm:items-center gap-2 pt-1">
-            <div class="relative flex-1">
-              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
-              <input type="text" id="toolSearchInput" oninput="renderTools()" placeholder="공구명, 보관위치, 대여자 검색..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
-            </div>
-            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs shrink-0">
-              <button type="button" onclick="setToolFilter('ALL')" id="tool-filter-ALL" class="px-2.5 py-1.5 rounded-lg bg-navy-800 text-white font-bold transition whitespace-nowrap">전체</button>
-              <button type="button" onclick="setToolFilter('AVAILABLE')" id="tool-filter-AVAILABLE" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition whitespace-nowrap">비치 중</button>
-              <button type="button" onclick="setToolFilter('RENTED')" id="tool-filter-RENTED" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition whitespace-nowrap">대여 중</button>
-              <button type="button" onclick="setToolFilter('REPAIR')" id="tool-filter-REPAIR" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition whitespace-nowrap">수리/점검</button>
+              <!-- 세분화된 검색 & 날짜/동·호수 필터 패널 -->
+              <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-2.5">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs">
+                    <button type="button" onclick="setFdHistoryFilter('ALL')" id="fd-filter-ALL" class="px-2.5 py-1.5 rounded-lg bg-navy-800 text-white font-bold transition whitespace-nowrap">전체 이력</button>
+                    <button type="button" onclick="setFdHistoryFilter('광전식감지기')" id="fd-filter-광전식감지기" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition whitespace-nowrap">🔥 광전식</button>
+                    <button type="button" onclick="setFdHistoryFilter('정온식감지기')" id="fd-filter-정온식감지기" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition whitespace-nowrap">🌡️ 정온식</button>
+                  </div>
+                  <span id="fdHistoryCountBadge" class="text-[11px] font-bold text-rose-700 shrink-0 whitespace-nowrap">총 0건</span>
+                </div>
+
+                <!-- 기간 프리셋 + 직접 날짜 범위 -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-2">
+                  <div class="flex items-center justify-between gap-1.5 flex-wrap">
+                    <span class="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                      <i class="fa-regular fa-calendar text-brand-600"></i> 기간 선택
+                    </span>
+                    <div class="flex items-center gap-1 overflow-x-auto no-scrollbar text-[11px]">
+                      <button type="button" onclick="setFdPeriodPreset('ALL')" id="fd-period-ALL" class="px-2 py-1 rounded-md bg-navy-800 text-white font-bold whitespace-nowrap">전체</button>
+                      <button type="button" onclick="setFdPeriodPreset('TODAY')" id="fd-period-TODAY" class="px-2 py-1 rounded-md bg-white border border-slate-200 text-slate-600 font-semibold whitespace-nowrap">오늘</button>
+                      <button type="button" onclick="setFdPeriodPreset('7D')" id="fd-period-7D" class="px-2 py-1 rounded-md bg-white border border-slate-200 text-slate-600 font-semibold whitespace-nowrap">최근 7일</button>
+                      <button type="button" onclick="setFdPeriodPreset('MONTH')" id="fd-period-MONTH" class="px-2 py-1 rounded-md bg-white border border-slate-200 text-slate-600 font-semibold whitespace-nowrap">이번 달</button>
+                      <button type="button" onclick="setFdPeriodPreset('LAST_MONTH')" id="fd-period-LAST_MONTH" class="px-2 py-1 rounded-md bg-white border border-slate-200 text-slate-600 font-semibold whitespace-nowrap">지난 달</button>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">시작일</label>
+                      <input type="date" id="fdStartDate" onchange="onFdCustomDateChange()" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                    <div>
+                      <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">종료일</label>
+                      <input type="date" id="fdEndDate" onchange="onFdCustomDateChange()" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 동 / 호수·층 / 일반 키워드 세분화 검색 -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                  <div class="sm:col-span-4">
+                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">동·구역 선택</label>
+                    <select id="fdDongFilter" onchange="renderFireDetectors()" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                      <option value="ALL">전체 동·구역</option>
+                    </select>
+                  </div>
+                  <div class="sm:col-span-4">
+                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">호수 · 층 세부검색</label>
+                    <input type="text" id="fdUnitFilterInput" oninput="renderFireDetectors()" placeholder="예: 101호, 1층, 계단" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                  </div>
+                  <div class="sm:col-span-4">
+                    <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">작성자 · 사유 검색</label>
+                    <div class="relative">
+                      <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass text-[11px]"></i></span>
+                      <input type="text" id="fdSearchInput" oninput="renderFireDetectors()" placeholder="키워드 입력..." class="w-full pl-8 pr-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="fdHistoryContainer" class="space-y-2.5"></div>
             </div>
           </div>
         </div>
-
-        <div id="toolsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <!-- Dynamic Tool Cards -->
-        </div>
       </section>
 
-      <!-- TAB: REPAIR VENDORS (자주 찾는 수리업체 연락처) -->
+      <!-- TAB: REPAIR VENDORS -->
       <section id="tab-vendors" class="hidden space-y-4">
         <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
@@ -498,42 +1048,41 @@
               <button type="button" onclick="toggleVendorAddForm()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <!-- Smart File / Photo / Text Auto-Import Box -->
-            <div class="bg-indigo-50/90 border border-indigo-200 rounded-xl p-3 space-y-2">
+            <div class="bg-teal-50/90 border border-teal-200 rounded-xl p-3 space-y-2">
               <div class="flex items-center justify-between">
-                <span class="text-[11px] sm:text-xs font-extrabold text-indigo-900 flex items-center gap-1">
-                  <i class="fa-solid fa-wand-magic-sparkles text-indigo-600 shrink-0"></i> 사진 · 문서(엑셀/PDF/워드/한글) 자동 인식
+                <span class="text-[11px] sm:text-xs font-extrabold text-teal-900 flex items-center gap-1">
+                  <i class="fa-solid fa-wand-magic-sparkles text-teal-600 shrink-0"></i> 사진 · 엑셀(문서) 업체 일괄 자동 인식
                 </span>
               </div>
-              <p class="text-[11px] text-indigo-700 leading-relaxed">
-                명함·비상연락망 <strong>사진</strong>이나 <strong>엑셀(.xlsx/.csv), PDF, 워드(.docx), 텍스트(.txt)</strong> 파일을 선택하면 업체명과 전화번호를 자동으로 뽑아 일괄 등록합니다.
+              <p class="text-[11px] text-teal-800 leading-relaxed">
+                명함이나 비상연락망 표 <strong>사진</strong> 또는 <strong>엑셀(.xlsx/.csv), PDF, 워드(.docx)</strong> 파일을 선택하면 업체명과 전화번호를 자동으로 추출해 일괄 등록합니다.
               </p>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <label class="cursor-pointer py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs text-center shadow-xs transition flex items-center justify-center gap-1.5">
-                  <i class="fa-solid fa-file-arrow-up"></i> 사진 · 파일 선택
+                <label class="cursor-pointer py-2.5 px-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs text-center shadow-xs transition flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-file-arrow-up"></i> 사진 · 엑셀/문서 선택
                   <input type="file" id="vendorSmartFileInput" accept="image/*,.xlsx,.xls,.csv,.pdf,.docx,.txt,.hwp" onchange="handleVendorSmartFile(event)" class="hidden">
                 </label>
-                <button type="button" onclick="toggleVendorPasteBox()" class="py-2.5 px-3 bg-white hover:bg-indigo-100 text-indigo-800 border border-indigo-300 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
-                  <i class="fa-solid fa-paste"></i> 한글(HWP)·카톡 붙여넣기
+                <button type="button" onclick="toggleVendorPasteBox()" class="py-2.5 px-3 bg-white hover:bg-teal-100 text-teal-900 border border-teal-300 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-paste"></i> 한글(HWP)·연락망 붙여넣기
                 </button>
               </div>
 
               <div id="vendorPasteBox" class="hidden space-y-1.5 pt-1">
-                <textarea id="vendorPasteTextarea" rows="3" placeholder="한글(HWP) 표나 카카오톡에서 복사한 연락처 내용을 붙여넣으세요&#10;예: 한일승강기 044-865-1199 이부장 / 세종설비누수 010-2345-6789" class="w-full p-2.5 bg-white border border-indigo-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-                <button type="button" onclick="parseVendorRawText()" class="w-full py-2 bg-indigo-700 hover:bg-indigo-600 text-white font-bold rounded-lg text-xs">
+                <textarea id="vendorPasteTextarea" rows="3" placeholder="한글(HWP)이나 카카오톡 비상연락망을 복사해 붙여넣으세요&#10;예: 티센크루프 승강기 1577-0603" class="w-full p-2.5 bg-white border border-teal-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+                <button type="button" onclick="parseVendorRawText()" class="w-full py-2 bg-teal-700 hover:bg-teal-600 text-white font-bold rounded-lg text-xs">
                   붙여넣은 내용에서 업체 추출하기
                 </button>
               </div>
 
-              <div id="vendorImportLoading" class="hidden py-2 text-center text-xs font-bold text-indigo-700 flex items-center justify-center gap-2">
+              <div id="vendorImportLoading" class="hidden py-2 text-center text-xs font-bold text-teal-800 flex items-center justify-center gap-2">
                 <i class="fa-solid fa-spinner fa-spin"></i>
-                <span id="vendorImportLoadingText">문서/사진에서 연락처를 분석하고 있습니다...</span>
+                <span>문서/사진에서 업체와 전화번호를 인식하고 있습니다...</span>
               </div>
 
-              <div id="vendorImportPreviewBox" class="hidden bg-white border border-indigo-200 rounded-xl p-2.5 space-y-2">
+              <div id="vendorImportPreviewBox" class="hidden bg-white border border-teal-200 rounded-xl p-2.5 space-y-2">
                 <div class="flex items-center justify-between">
-                  <span id="vendorImportCountLabel" class="text-[11px] font-extrabold text-indigo-800">0개 업체 추출됨</span>
+                  <span id="vendorImportCountLabel" class="text-[11px] font-extrabold text-teal-800">0개 업체 추출됨</span>
                   <button type="button" onclick="clearVendorImportPreview()" class="text-[11px] text-slate-400 hover:text-red-500">닫기</button>
                 </div>
                 <div id="vendorImportPreviewList" class="space-y-1.5"></div>
@@ -544,113 +1093,237 @@
             </div>
 
             <div class="border-t border-slate-200 pt-2 text-[11px] font-bold text-slate-500">또는 직접 1건 입력 등록</div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div class="grid grid-cols-2 gap-2">
               <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">관리 구분</label>
-                <select id="newVendorScope" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">업체 구분</label>
+                <select id="newVendorScope" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800">
                   <option value="공용">🏢 공용 수리업체 (관리소)</option>
-                  <option value="세대">🏠 세대 수리업체 (입주민안내)</option>
+                  <option value="세대">🏠 세대 수리업체 (입주민)</option>
                 </select>
               </div>
               <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">업종 분류</label>
-                <select id="newVendorCategory" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                  <option value="승강기">🛗 승강기</option>
-                  <option value="설비·배관">🚰 설비 · 배관 · 누수</option>
-                  <option value="전기·소방">⚡ 전기 · 소방</option>
-                  <option value="인터폰·통신">📞 인터폰 · 출입통제</option>
-                  <option value="세대수리·기타">🔧 세대수리 · 기타</option>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">분야</label>
+                <select id="newVendorCategory" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800">
+                  <option value="승강기">승강기</option>
+                  <option value="설비·배관">설비·배관</option>
+                  <option value="전기·소방">전기·소방</option>
+                  <option value="인터폰·통신">인터폰·통신</option>
+                  <option value="세대수리·기타">세대수리·기타</option>
                 </select>
-              </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">업체명</label>
-                <input type="text" id="newVendorName" placeholder="예: 세종설비누수탐지" required class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
               </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">전화번호</label>
-                <input type="tel" id="newVendorPhone" placeholder="예: 010-1234-5678" required class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-              </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">담당자 / 직함 (선택)</label>
-                <input type="text" id="newVendorManager" placeholder="예: 김사장님" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-              </div>
+              <input type="text" id="newVendorName" placeholder="업체명 (예: 세종종합설비)" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold">
+              <input type="tel" id="newVendorPhone" placeholder="전화번호 (예: 010-1234-5678)" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold">
             </div>
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-600 mb-1">주요 수리 품목 / 메모</label>
-              <input type="text" id="newVendorNote" placeholder="예: 세대 내 누수탐지, 언수도 해빙, 야간 긴급출동 가능" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input type="text" id="newVendorManager" placeholder="담당자 (선택)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs">
+              <input type="text" id="newVendorNote" placeholder="취급 업무 메모 (선택)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs">
             </div>
-            <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs sm:text-sm shadow transition">
-              수리업체 연락처 등록하기
+            <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs shadow transition">
+              수리업체 등록하기
             </button>
           </form>
 
-          <!-- Search & Scope/Category Filter -->
-          <div class="space-y-2 pt-1">
-            <!-- 공용 vs 세대 분리 탭 -->
-            <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs">
-              <button type="button" onclick="setVendorScope('ALL')" id="vscope-ALL" class="py-2 px-1 rounded-lg bg-brand-600 text-white font-extrabold shadow-xs transition">전체 업체</button>
-              <button type="button" onclick="setVendorScope('공용')" id="vscope-공용" class="py-2 px-1 rounded-lg text-slate-600 hover:text-slate-900 font-bold transition">🏢 공용 (관리소)</button>
-              <button type="button" onclick="setVendorScope('세대')" id="vscope-세대" class="py-2 px-1 rounded-lg text-slate-600 hover:text-slate-900 font-bold transition">🏠 세대 (입주민)</button>
-            </div>
+          <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs">
+            <button type="button" onclick="setVendorScope('ALL')" id="vscope-ALL" class="py-2 px-1 rounded-lg bg-brand-600 text-white font-extrabold shadow-xs transition">전체 업체</button>
+            <button type="button" onclick="setVendorScope('공용')" id="vscope-공용" class="py-2 px-1 rounded-lg text-slate-600 hover:text-slate-900 font-bold transition">🏢 공용 (관리소)</button>
+            <button type="button" onclick="setVendorScope('세대')" id="vscope-세대" class="py-2 px-1 rounded-lg text-slate-600 hover:text-slate-900 font-bold transition">🏠 세대 (입주민)</button>
+          </div>
 
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
-              <input type="text" id="vendorSearchInput" oninput="renderVendors()" placeholder="업체명, 수리내용(누수, 승강기, 도어락 등) 검색..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
-            </div>
-            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 text-xs">
-              <button type="button" onclick="setVendorCategory('ALL')" id="vcat-ALL" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-navy-800 text-white font-bold transition">전체</button>
-              <button type="button" onclick="setVendorCategory('승강기')" id="vcat-승강기" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition">승강기</button>
-              <button type="button" onclick="setVendorCategory('설비·배관')" id="vcat-설비·배관" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition">설비·배관</button>
-              <button type="button" onclick="setVendorCategory('전기·소방')" id="vcat-전기·소방" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition">전기·소방</button>
-              <button type="button" onclick="setVendorCategory('인터폰·통신')" id="vcat-인터폰·통신" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition">인터폰·통신</button>
-              <button type="button" onclick="setVendorCategory('세대수리·기타')" id="vcat-세대수리·기타" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition">세대수리·기타</button>
-            </div>
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs">
+            <button type="button" onclick="setVendorCategory('ALL')" id="vcat-ALL" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-navy-800 text-white font-bold transition">전체 분야</button>
+            <button type="button" onclick="setVendorCategory('승강기')" id="vcat-승강기" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition">승강기</button>
+            <button type="button" onclick="setVendorCategory('설비·배관')" id="vcat-설비·배관" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition">설비·배관</button>
+            <button type="button" onclick="setVendorCategory('전기·소방')" id="vcat-전기·소방" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition">전기·소방</button>
+            <button type="button" onclick="setVendorCategory('인터폰·통신')" id="vcat-인터폰·통신" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition">인터폰·통신</button>
+            <button type="button" onclick="setVendorCategory('세대수리·기타')" id="vcat-세대수리·기타" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition">세대수리·기타</button>
+          </div>
+
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+            <input type="text" id="vendorSearchInput" oninput="renderVendors()" placeholder="업체명, 전화번호, 취급업무 검색..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800">
+          </div>
+
+          <div class="flex items-center justify-between">
+            <div id="vendorTotalCountBadge" class="text-[11px] sm:text-xs font-bold text-brand-700">전체 0개 업체 표시 중</div>
+            <span class="text-[10px] sm:text-[11px] text-slate-400">★ 별표 클릭 시 상단 고정</span>
           </div>
         </div>
+        <div id="vendorsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 pb-6"></div>
+      </section>
 
-        <div class="flex items-center justify-between px-1">
-          <span id="vendorTotalCountBadge" class="text-[11px] sm:text-xs font-bold text-brand-700">전체 0개 업체 표시 중</span>
-          <span class="text-[10px] sm:text-[11px] text-slate-400">★ 별표 클릭 시 상단 고정</span>
-        </div>
-        <div id="vendorsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 pb-6">
-          <!-- Dynamic Vendor Cards -->
+      <!-- TAB: PURCHASE RECEIPT & ITEM VERIFICATION -->
+      <section id="tab-purchases" class="hidden space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+          <div class="md:col-span-5 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-receipt text-brand-600 shrink-0"></i> 물품 구매 · 영수증 등록
+              </h3>
+              <span id="purchaseAuthorTag" class="text-[11px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full truncate max-w-[120px]">
+                구매자: 미선택
+              </span>
+            </div>
+
+            <form onsubmit="submitPurchaseRecord(event)" class="space-y-2.5">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">구매 날짜 (달력)</label>
+                  <input type="date" id="purchaseDate" required class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">결제 수단</label>
+                  <select id="purchasePayMethod" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800">
+                    <option value="법인카드">💳 법인카드</option>
+                    <option value="현금/간이영수증">💵 현금 · 간이영수증</option>
+                    <option value="계좌이체/세금계산서">🏦 계좌이체 · 계산서</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">구매 물품명 / 규격</label>
+                <input type="text" id="purchaseItemName" placeholder="예: LED 센서등 모듈 10개, 배관 보온재 5롤" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800">
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">구매처 (상호)</label>
+                  <input type="text" id="purchaseStore" placeholder="예: 세종종합자재상사" required class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-600 mb-1">구매 금액 (원)</label>
+                  <input type="number" id="purchaseAmount" placeholder="예: 45000" min="0" required class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">사용 용도 / 작업 위치</label>
+                <input type="text" id="purchasePurpose" placeholder="예: 702동 지하주차장 센서등 교체용" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800">
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 pt-1">
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">1. 구매 물품 사진</label>
+                  <label class="cursor-pointer flex flex-col items-center justify-center p-3 border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-xl bg-slate-50 hover:bg-brand-50/40 transition text-center">
+                    <i class="fa-solid fa-box-open text-brand-600 text-base mb-1"></i>
+                    <span class="text-[11px] font-bold text-slate-700">물품 사진 촬영/첨부</span>
+                    <input type="file" id="purchaseItemPhotoInput" accept="image/*" onchange="handlePurchasePhoto(event, 'item')" class="hidden">
+                  </label>
+                  <div id="purchaseItemPreviewBox" class="hidden mt-1.5 relative rounded-xl overflow-hidden border border-slate-200">
+                    <img id="purchaseItemPreviewImg" src="" alt="물품사진" class="w-full h-24 object-cover">
+                    <button type="button" onclick="clearPurchasePhoto('item')" class="absolute top-1 right-1 w-6 h-6 bg-slate-900/75 text-white rounded-full text-[10px] flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 mb-1">2. 영수증 사진</label>
+                  <label class="cursor-pointer flex flex-col items-center justify-center p-3 border-2 border-dashed border-indigo-300 hover:border-indigo-500 rounded-xl bg-indigo-50/40 hover:bg-indigo-50 transition text-center">
+                    <i class="fa-solid fa-file-invoice-dollar text-indigo-600 text-base mb-1"></i>
+                    <span class="text-[11px] font-bold text-indigo-900">영수증 촬영/첨부</span>
+                    <input type="file" id="purchaseReceiptPhotoInput" accept="image/*" onchange="handlePurchasePhoto(event, 'receipt')" class="hidden">
+                  </label>
+                  <div id="purchaseReceiptPreviewBox" class="hidden mt-1.5 relative rounded-xl overflow-hidden border border-slate-200">
+                    <img id="purchaseReceiptPreviewImg" src="" alt="영수증사진" class="w-full h-24 object-cover">
+                    <button type="button" onclick="clearPurchasePhoto('receipt')" class="absolute top-1 right-1 w-6 h-6 bg-slate-900/75 text-white rounded-full text-[10px] flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm">
+                <i class="fa-solid fa-cloud-arrow-up"></i> 물품구매 내역 등록하기
+              </button>
+            </form>
+          </div>
+
+          <div class="md:col-span-7 space-y-3">
+            <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-sm space-y-2.5">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <span class="text-[11px] text-slate-500 font-semibold block">누적 구매 집계</span>
+                  <strong id="purchaseTotalSumBadge" class="text-sm sm:text-base font-extrabold text-slate-900">총 0건 · 0원</strong>
+                </div>
+                <button type="button" onclick="downloadPurchasesCSV()" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-[11px] font-bold flex items-center gap-1 shrink-0">
+                  <i class="fa-solid fa-file-excel"></i> 구매대장 엑셀
+                </button>
+              </div>
+
+              <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs">
+                <button type="button" onclick="setPurchaseFilter('ALL')" id="pur-filter-ALL" class="px-2.5 py-1.5 rounded-lg bg-navy-800 text-white font-bold transition whitespace-nowrap">전체 내역</button>
+                <button type="button" onclick="setPurchaseFilter('UNVERIFIED')" id="pur-filter-UNVERIFIED" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition whitespace-nowrap">미확인(정산대기)</button>
+                <button type="button" onclick="setPurchaseFilter('VERIFIED')" id="pur-filter-VERIFIED" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 font-semibold transition whitespace-nowrap">확인완료</button>
+              </div>
+            </div>
+
+            <div id="purchasesContainer" class="space-y-3"></div>
+          </div>
         </div>
       </section>
 
-      <!-- TAB: STAFF CHAT (직원 채팅) -->
+      <!-- TAB: STAFF CHAT -->
       <section id="tab-chat" class="hidden max-w-2xl mx-auto flex flex-col h-[calc(100vh-215px)] md:h-[calc(100vh-185px)] min-h-[420px]">
-        <div class="bg-white border border-slate-200 rounded-t-2xl px-4 py-2.5 flex items-center justify-between shadow-xs">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <h3 class="font-bold text-slate-800 text-sm">관리사무소 직원 단체 채팅</h3>
+        <div class="bg-white border border-slate-200 rounded-t-2xl px-3.5 py-2.5 flex items-center justify-between gap-2 shadow-xs">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+            <h3 class="font-bold text-slate-800 text-xs sm:text-sm truncate">관리사무소 직원 단체 채팅</h3>
           </div>
-          <span id="chatCurrentUserBadge" class="text-[11px] font-semibold bg-brand-50 text-brand-700 border border-brand-200 px-2 py-0.5 rounded-full truncate max-w-[140px]">
-            미선택
-          </span>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button type="button" id="chatSoundToggleBtn" onclick="toggleChatSound()" class="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[11px] font-bold transition flex items-center gap-1 whitespace-nowrap">
+              <i id="chatSoundIcon" class="fa-solid fa-bell"></i>
+              <span id="chatSoundText">알림음 ON</span>
+            </button>
+            <span id="chatCurrentUserBadge" class="text-[11px] font-semibold bg-brand-50 text-brand-700 border border-brand-200 px-2 py-0.5 rounded-full truncate max-w-[110px]">
+              미선택
+            </span>
+          </div>
         </div>
 
-        <div id="chatMessagesContainer" class="flex-1 bg-slate-100 border-x border-slate-200 p-3.5 overflow-y-auto space-y-3">
-          <!-- Dynamic Chat Bubbles -->
+        <div id="chatMessagesContainer" class="flex-1 bg-slate-100 border-x border-slate-200 p-3.5 overflow-y-auto space-y-3"></div>
+
+        <!-- EMOJI PICKER PANEL -->
+        <div id="chatEmojiPanel" class="hidden bg-white border-x border-t border-slate-200 p-2.5 grid grid-cols-8 sm:grid-cols-10 gap-1.5 shadow-inner">
+          <button type="button" onclick="sendEmojiMessage('👍')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">👍</button>
+          <button type="button" onclick="sendEmojiMessage('👌')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">👌</button>
+          <button type="button" onclick="sendEmojiMessage('🙏')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">🙏</button>
+          <button type="button" onclick="sendEmojiMessage('🙇‍♂️')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">🙇‍♂️</button>
+          <button type="button" onclick="sendEmojiMessage('✅')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">✅</button>
+          <button type="button" onclick="sendEmojiMessage('🔧')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">🔧</button>
+          <button type="button" onclick="sendEmojiMessage('🚨')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">🚨</button>
+          <button type="button" onclick="sendEmojiMessage('⚡')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">⚡</button>
+          <button type="button" onclick="sendEmojiMessage('💧')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">💧</button>
+          <button type="button" onclick="sendEmojiMessage('🛗')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">🛗</button>
+          <button type="button" onclick="sendEmojiMessage('☕')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">☕</button>
+          <button type="button" onclick="sendEmojiMessage('🍚')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">🍚</button>
+          <button type="button" onclick="sendEmojiMessage('💪')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">💪</button>
+          <button type="button" onclick="sendEmojiMessage('😊')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">😊</button>
+          <button type="button" onclick="sendEmojiMessage('👏')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">👏</button>
+          <button type="button" onclick="sendEmojiMessage('🎉')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">🎉</button>
+          <button type="button" onclick="sendEmojiMessage('☔')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">☔</button>
+          <button type="button" onclick="sendEmojiMessage('❄️')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">❄️</button>
+          <button type="button" onclick="sendEmojiMessage('📞')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">📞</button>
+          <button type="button" onclick="sendEmojiMessage('🏃‍♂️')" class="p-1.5 hover:bg-slate-100 rounded-xl text-xl transition">🏃‍♂️</button>
         </div>
 
         <div class="bg-slate-50 border-x border-t border-slate-200 px-3 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          <button type="button" onclick="sendQuickChat('순찰 완료했습니다. 특이사항 없습니다.')" class="shrink-0 px-2.5 py-1 bg-white hover:bg-brand-50 border border-slate-200 rounded-full text-[11px] font-medium text-slate-700 transition">👍 순찰 완료</button>
-          <button type="button" onclick="sendQuickChat('현장 확인 중입니다.')" class="shrink-0 px-2.5 py-1 bg-white hover:bg-brand-50 border border-slate-200 rounded-full text-[11px] font-medium text-slate-700 transition">🔧 현장 확인 중</button>
-          <button type="button" onclick="sendQuickChat('사무실 복귀 중입니다.')" class="shrink-0 px-2.5 py-1 bg-white hover:bg-brand-50 border border-slate-200 rounded-full text-[11px] font-medium text-slate-700 transition">🚶 사무실 복귀 중</button>
-          <button type="button" onclick="sendQuickChat('현장 지원 요청합니다.')" class="shrink-0 px-2.5 py-1 bg-white hover:bg-amber-50 border border-amber-200 rounded-full text-[11px] font-semibold text-amber-800 transition">🚨 지원 요청</button>
+          <button type="button" onclick="sendQuickChat('👍 순찰 완료했습니다. 특이사항 없습니다.')" class="shrink-0 px-2.5 py-1 bg-white hover:bg-brand-50 border border-slate-200 rounded-full text-[11px] font-medium text-slate-700 transition">👍 순찰 완료</button>
+          <button type="button" onclick="sendQuickChat('🔧 현장 확인 중입니다.')" class="shrink-0 px-2.5 py-1 bg-white hover:bg-brand-50 border border-slate-200 rounded-full text-[11px] font-medium text-slate-700 transition">🔧 현장 확인 중</button>
+          <button type="button" onclick="sendQuickChat('🚶 사무실 복귀 중입니다.')" class="shrink-0 px-2.5 py-1 bg-white hover:bg-brand-50 border border-slate-200 rounded-full text-[11px] font-medium text-slate-700 transition">🚶 사무실 복귀 중</button>
+          <button type="button" onclick="sendQuickChat('🚨 현장 지원 요청합니다.')" class="shrink-0 px-2.5 py-1 bg-white hover:bg-amber-50 border border-amber-200 rounded-full text-[11px] font-semibold text-amber-800 transition">🚨 지원 요청</button>
         </div>
 
-        <form onsubmit="submitChat(event)" class="bg-white border border-slate-200 rounded-b-2xl p-2.5 flex items-center gap-2 shadow-sm">
-          <input type="text" id="chatInput" placeholder="직원들에게 보낼 메시지 입력..." required class="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
-          <button type="submit" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs sm:text-sm shrink-0 transition flex items-center gap-1">
+        <form onsubmit="submitChat(event)" class="bg-white border border-slate-200 rounded-b-2xl p-2 sm:p-2.5 flex items-center gap-1.5 shadow-sm">
+          <button type="button" onclick="toggleChatEmojiPanel()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-amber-100 text-slate-700 flex items-center justify-center text-base shrink-0 transition" title="이모티콘">
+            😊
+          </button>
+          <input type="text" id="chatInput" placeholder="직원들에게 보낼 메시지 입력..." required class="flex-1 min-w-0 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+          <button type="submit" class="px-3 sm:px-3.5 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs sm:text-sm shrink-0 transition flex items-center gap-1 whitespace-nowrap">
             <i class="fa-solid fa-paper-plane"></i> 전송
           </button>
         </form>
       </section>
 
-      <!-- TAB 3: ADMIN & EXCEL DOWNLOAD -->
+      <!-- TAB: ADMIN & EXCEL DOWNLOAD -->
       <section id="tab-admin" class="hidden space-y-4">
         <div id="adminLockedView" class="max-w-md mx-auto bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center space-y-4">
           <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center mx-auto text-2xl">
@@ -659,6 +1332,10 @@
           <div>
             <h3 class="font-bold text-slate-800 text-base">관리자 전용 보안 영역</h3>
             <p class="text-xs text-slate-500 mt-1">직원 명단 관리, 전체 일지 삭제 및 엑셀 다운로드를 위해 관리자 비밀번호를 입력하세요.</p>
+          </div>
+          <div id="adminLockedToolAlertNotice" class="hidden bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs font-bold text-amber-800 flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-bell text-amber-600 animate-bounce"></i>
+            <span id="adminLockedToolAlertText">미확인 공구 반납 알림이 있습니다.</span>
           </div>
           <form onsubmit="unlockAdminPanel(event)" class="max-w-xs mx-auto space-y-3">
             <input type="password" id="adminPinInput" placeholder="관리자 비밀번호 (기본: 0000)" required class="w-full px-4 py-2.5 text-center tracking-widest font-bold bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
@@ -670,7 +1347,6 @@
 
         <div id="adminUnlockedView" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
           
-          <!-- Event & Condolence Banner Manager -->
           <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -714,7 +1390,7 @@
 
               <div>
                 <label class="block text-[11px] font-semibold text-slate-600 mb-1">배너 제목</label>
-                <input type="text" id="bannerTitle" placeholder="예: 박민수 기전주임 장남 결혼식 안내" required class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <input type="text" id="bannerTitle" placeholder="예: 관리사무소 하반기 소방점검 안내" required class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-brand-500 focus:outline-none">
               </div>
 
               <div>
@@ -727,13 +1403,23 @@
               </button>
             </form>
 
-            <div id="adminBannerListContainer" class="space-y-1.5 pt-1">
-              <!-- Dynamic Banner Items -->
-            </div>
+            <div id="adminBannerListContainer" class="space-y-1.5 pt-1"></div>
           </div>
 
           <div class="space-y-4">
-            <!-- Staff Management Section -->
+            <div class="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm space-y-3">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <i class="fa-solid fa-bell text-amber-500"></i> 공구 반납 실시간 알림
+                </h3>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <span id="adminToolAlertCountBadge" class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">미확인 0건</span>
+                  <button type="button" onclick="markAllToolAlertsRead()" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-[10px] font-bold transition">모두 확인</button>
+                </div>
+              </div>
+              <div id="adminToolAlertListContainer" class="space-y-1.5 max-h-60 overflow-y-auto"></div>
+            </div>
+
             <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
               <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -752,12 +1438,9 @@
                 </div>
               </form>
 
-              <div class="mt-3 space-y-1.5" id="staffListContainer">
-                <!-- Dynamic Staff List Items -->
-              </div>
+              <div class="mt-3 space-y-1.5" id="staffListContainer"></div>
             </div>
 
-            <!-- Excel CSV Download Section -->
             <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
               <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -765,14 +1448,52 @@
                 </h3>
               </div>
               <p class="text-xs text-slate-600 leading-relaxed">
-                현재 저장된 모든 직원들의 작업일지 내역(날짜, 작성자, 장소, 처리내용, 사진첨부여부)을 엑셀(CSV) 파일로 즉시 내려받습니다.
+                현재 저장된 모든 직원들의 작업일지 내역(날짜, 민원구분, 작성자, 장소, 민원내용, 처리내용, 사진첨부여부)을 엑셀(CSV) 파일로 즉시 내려받습니다.
               </p>
               <button onclick="downloadCSV()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-2 text-sm">
                 <i class="fa-solid fa-download"></i> 엑셀(CSV) 파일 내려받기
               </button>
             </div>
 
-            <!-- Admin Lock & Reset Controls -->
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <i class="fa-solid fa-palette text-brand-600"></i> 기분별 화면 테마 색상 (7종)
+                </h4>
+                <span id="currentThemeLabel" class="text-[11px] font-bold text-brand-600">청록(기본)</span>
+              </div>
+              <div class="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
+                <button type="button" onclick="setAppTheme('teal')" id="themeBtn-teal" class="p-2 rounded-xl bg-white border-2 border-teal-600 flex flex-col items-center gap-1 shadow-xs transition">
+                  <span class="w-5 h-5 rounded-full bg-teal-600 block"></span>
+                  <span class="text-[10px] font-bold text-slate-700">청록</span>
+                </button>
+                <button type="button" onclick="setAppTheme('blue')" id="themeBtn-blue" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-blue-400 flex flex-col items-center gap-1 transition">
+                  <span class="w-5 h-5 rounded-full bg-blue-600 block"></span>
+                  <span class="text-[10px] font-bold text-slate-700">하늘</span>
+                </button>
+                <button type="button" onclick="setAppTheme('emerald')" id="themeBtn-emerald" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 flex flex-col items-center gap-1 transition">
+                  <span class="w-5 h-5 rounded-full bg-emerald-600 block"></span>
+                  <span class="text-[10px] font-bold text-slate-700">초록</span>
+                </button>
+                <button type="button" onclick="setAppTheme('indigo')" id="themeBtn-indigo" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-indigo-400 flex flex-col items-center gap-1 transition">
+                  <span class="w-5 h-5 rounded-full bg-indigo-600 block"></span>
+                  <span class="text-[10px] font-bold text-slate-700">남색</span>
+                </button>
+                <button type="button" onclick="setAppTheme('rose')" id="themeBtn-rose" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-rose-400 flex flex-col items-center gap-1 transition">
+                  <span class="w-5 h-5 rounded-full bg-rose-600 block"></span>
+                  <span class="text-[10px] font-bold text-slate-700">로즈</span>
+                </button>
+                <button type="button" onclick="setAppTheme('amber')" id="themeBtn-amber" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-amber-400 flex flex-col items-center gap-1 transition">
+                  <span class="w-5 h-5 rounded-full bg-amber-600 block"></span>
+                  <span class="text-[10px] font-bold text-slate-700">오렌지</span>
+                </button>
+                <button type="button" onclick="setAppTheme('slate')" id="themeBtn-slate" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-slate-500 flex flex-col items-center gap-1 transition">
+                  <span class="w-5 h-5 rounded-full bg-slate-700 block"></span>
+                  <span class="text-[10px] font-bold text-slate-700">차콜</span>
+                </button>
+              </div>
+            </div>
+
             <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2.5">
               <h4 class="text-xs font-bold text-slate-700">시스템 관리</h4>
               <div class="grid grid-cols-2 gap-2">
@@ -791,7 +1512,7 @@
 
     </main>
 
-    <!-- FIXED BOTTOM NAVIGATION & FOOTER BAR (Always visible on Mobile, Tablet & PC) -->
+    <!-- FIXED BOTTOM NAVIGATION & FOOTER BAR -->
     <div class="fixed bottom-0 left-0 right-0 w-full z-40 flex flex-col items-center pointer-events-none">
       <div class="w-full max-w-4xl pointer-events-auto shadow-2xl">
         <nav class="w-full bg-navy-800 border-t border-slate-700/80 px-1.5 sm:px-3 py-1.5 flex items-center justify-between gap-1">
@@ -805,7 +1526,20 @@
             <span class="text-[10px] sm:text-xs leading-tight tracking-tighter whitespace-nowrap">작업내역</span>
           </button>
 
+          <button onclick="switchTab('plans')" id="nav-plans" class="relative flex-1 min-w-0 py-1.5 sm:py-2 px-0.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 font-semibold transition-all duration-200">
+            <i class="fa-solid fa-calendar-check text-xs"></i>
+            <span class="text-[10px] sm:text-xs leading-tight tracking-tighter whitespace-nowrap">업무계획</span>
+          </button>
+
+          <button onclick="switchTab('leave')" id="nav-leave" class="relative flex-1 min-w-0 py-1.5 sm:py-2 px-0.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 font-semibold transition-all duration-200">
+            <span id="todayLeaveDot" class="hidden absolute top-1 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
+            <i class="fa-solid fa-umbrella-beach text-xs"></i>
+            <span class="text-[10px] sm:text-xs leading-tight tracking-tighter whitespace-nowrap">연차·휴가</span>
+          </button>
+
           <button onclick="switchTab('chat')" id="nav-chat" class="relative flex-1 min-w-0 py-1.5 sm:py-2 px-0.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 font-semibold transition-all duration-200">
+            <span id="unreadChatDot" class="hidden absolute top-1 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
+            <span id="unreadChatDotSolid" class="hidden absolute top-1 right-1.5 w-2 h-2 bg-rose-500 rounded-full"></span>
             <i class="fa-solid fa-comments text-xs"></i>
             <span class="text-[10px] sm:text-xs leading-tight tracking-tighter whitespace-nowrap">직원채팅</span>
           </button>
@@ -827,13 +1561,19 @@
             <span class="text-[10px] sm:text-xs leading-tight tracking-tighter whitespace-nowrap">수리업체</span>
           </button>
 
+          <button onclick="switchTab('purchases')" id="nav-purchases" class="relative flex-1 min-w-0 py-1.5 sm:py-2 px-0.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 font-semibold transition-all duration-200">
+            <span id="unverifiedPurchaseDot" class="hidden absolute top-1 right-1.5 w-2 h-2 bg-indigo-400 rounded-full"></span>
+            <i class="fa-solid fa-receipt text-xs"></i>
+            <span class="text-[10px] sm:text-xs leading-tight tracking-tighter whitespace-nowrap">물품구매</span>
+          </button>
+
           <button onclick="switchTab('admin')" id="nav-admin" class="relative flex-1 min-w-0 py-1.5 sm:py-2 px-0.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 font-semibold transition-all duration-200">
+            <span id="adminReturnAlertDot" class="hidden absolute top-1 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
             <i class="fa-solid fa-sliders text-xs"></i>
             <span class="text-[10px] sm:text-xs leading-tight tracking-tighter whitespace-nowrap">관리자</span>
           </button>
         </nav>
 
-        <!-- FOOTER CLOUD STATUS BANNER -->
         <footer class="bg-slate-900 border-t border-slate-800 py-1.5 px-3 text-center text-[10px] sm:text-xs text-slate-300 font-medium flex items-center justify-center gap-1.5">
           <span id="cloudStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
           <span id="cloudStatusText" class="truncate">클라우드 실시간 서버 연결 중...</span>
@@ -856,17 +1596,31 @@
       </div>
       <form onsubmit="saveEditedLog(event)" class="space-y-3">
         <input type="hidden" id="editLogId">
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">작업 날짜</label>
-          <input type="date" id="editLogDate" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">작업 날짜</label>
+            <input type="date" id="editLogDate" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">민원 · 작업 구분</label>
+            <select id="editLogCategory" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-800">
+              <option value="공용민원">🏢 공용민원</option>
+              <option value="세대민원">🏠 세대민원</option>
+              <option value="정기점검">🔍 정기점검</option>
+            </select>
+          </div>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">작업 장소</label>
           <input type="text" id="editLogLocation" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm">
         </div>
         <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">민원 내용</label>
+          <textarea id="editLogComplaintContent" rows="2" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm resize-none"></textarea>
+        </div>
+        <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">처리 내용</label>
-          <textarea id="editLogContent" rows="4" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm resize-none"></textarea>
+          <textarea id="editLogContent" rows="3" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm resize-none"></textarea>
         </div>
         <div class="flex gap-2 pt-2">
           <button type="button" onclick="closeEditModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm">취소</button>
@@ -965,6 +1719,225 @@
       <i class="fa-solid fa-xmark"></i>
     </button>
     <img id="lightboxImg" src="" alt="확대 이미지" class="max-w-full max-h-[85vh] rounded-xl shadow-2xl object-contain">
+  </div>
+
+  <!-- LEAVE / VACATION APPROVAL PRINT MODAL -->
+  <div id="leavePrintModal" class="hidden fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl w-full max-w-xl p-6 sm:p-8 shadow-2xl space-y-5 text-slate-900">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3 no-print">
+        <span class="text-xs font-extrabold text-brand-700"><i class="fa-solid fa-print mr-1"></i>결재용 신청서 미리보기 (A4 인쇄 지원)</span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="window.print()" class="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs shadow flex items-center gap-1.5">
+            <i class="fa-solid fa-print"></i> 바로 인쇄하기
+          </button>
+          <button type="button" onclick="closeLeavePrintModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">닫기</button>
+        </div>
+      </div>
+
+      <div id="leavePrintSheet" class="border-2 border-slate-800 p-5 sm:p-7 space-y-5 bg-white">
+        <div class="flex items-start justify-between gap-4">
+          <div class="pt-2">
+            <p class="text-xs font-bold text-slate-500">호려울마을 7단지 관리사무소</p>
+            <h2 class="text-2xl font-extrabold tracking-widest text-slate-900 mt-1 underline underline-offset-8">연차(휴가) 신청서</h2>
+          </div>
+          <table class="border-collapse border border-slate-800 text-center text-xs shrink-0">
+            <tr>
+              <th rowspan="2" class="border border-slate-800 bg-slate-100 px-2 py-2 font-bold w-8">결<br>재</th>
+              <th class="border border-slate-800 bg-slate-100 px-3 py-1 font-bold w-16">담 당</th>
+              <th class="border border-slate-800 bg-slate-100 px-3 py-1 font-bold w-16">과 장</th>
+              <th class="border border-slate-800 bg-slate-100 px-3 py-1 font-bold w-16">소 장</th>
+            </tr>
+            <tr class="h-14">
+              <td class="border border-slate-800 text-[11px] font-bold text-slate-700" id="printSignAuthor">서명</td>
+              <td class="border border-slate-800 text-[11px] text-slate-400"></td>
+              <td class="border border-slate-800 text-[11px] font-extrabold text-emerald-700" id="printSignDirector"></td>
+            </tr>
+          </table>
+        </div>
+
+        <table class="w-full border-collapse border border-slate-800 text-xs sm:text-sm">
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-2.5 px-3 w-28 font-bold text-left">소 속</th>
+            <td class="border border-slate-800 py-2.5 px-3">호려울마을 7단지 관리사무소</td>
+            <th class="border border-slate-800 bg-slate-100 py-2.5 px-3 w-24 font-bold text-left">직 책</th>
+            <td class="border border-slate-800 py-2.5 px-3" id="printRole">-</td>
+          </tr>
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-2.5 px-3 font-bold text-left">성 명</th>
+            <td class="border border-slate-800 py-2.5 px-3 font-extrabold" id="printName">-</td>
+            <th class="border border-slate-800 bg-slate-100 py-2.5 px-3 font-bold text-left">휴가 구분</th>
+            <td class="border border-slate-800 py-2.5 px-3 font-bold text-brand-700" id="printType">-</td>
+          </tr>
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-2.5 px-3 font-bold text-left">휴가 기간</th>
+            <td colspan="3" class="border border-slate-800 py-2.5 px-3 font-bold" id="printPeriod">-</td>
+          </tr>
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-2.5 px-3 font-bold text-left">비상 연락처</th>
+            <td colspan="3" class="border border-slate-800 py-2.5 px-3" id="printPhone">-</td>
+          </tr>
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-6 px-3 font-bold text-left align-top">사유 및<br>업무대행</th>
+            <td colspan="3" class="border border-slate-800 py-4 px-3 align-top leading-relaxed whitespace-pre-line min-h-[90px]" id="printReason">-</td>
+          </tr>
+        </table>
+
+        <div class="pt-4 text-center space-y-4">
+          <p class="text-xs sm:text-sm font-medium text-slate-700">위와 같이 연차(휴가)를 신청하오니 허가하여 주시기 바랍니다.</p>
+          <p class="text-xs sm:text-sm font-bold text-slate-800" id="printSubmittedDate">2026년 11월 24일</p>
+          <p class="text-sm font-extrabold text-slate-900 text-right pr-4">신청인 : <span id="printApplicantSign">홍길동</span> (인)</p>
+          <p class="text-base font-extrabold text-slate-900 pt-2">호려울마을 7단지 관리사무소장 귀하</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PURCHASE RECEIPT & ITEM PHOTO PRINT MODAL -->
+  <div id="purchasePrintModal" class="hidden fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl w-full max-w-2xl p-6 sm:p-8 shadow-2xl space-y-5 text-slate-900">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3 no-print">
+        <span class="text-xs font-extrabold text-brand-700"><i class="fa-solid fa-print mr-1"></i>물품구매 · 영수증 지출증빙서 미리보기 (A4 인쇄)</span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="window.print()" class="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs shadow flex items-center gap-1.5">
+            <i class="fa-solid fa-print"></i> 바로 인쇄하기
+          </button>
+          <button type="button" onclick="closePurchasePrintModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">닫기</button>
+        </div>
+      </div>
+
+      <div class="border-2 border-slate-800 p-5 sm:p-7 space-y-4 bg-white">
+        <div class="flex items-start justify-between gap-4">
+          <div class="pt-1">
+            <p class="text-xs font-bold text-slate-500">호려울마을 7단지 관리사무소</p>
+            <h2 class="text-xl sm:text-2xl font-extrabold tracking-widest text-slate-900 mt-1 underline underline-offset-8">물품구매 지출증빙서</h2>
+          </div>
+          <table class="border-collapse border border-slate-800 text-center text-xs shrink-0">
+            <tr>
+              <th rowspan="2" class="border border-slate-800 bg-slate-100 px-2 py-2 font-bold w-8">결<br>재</th>
+              <th class="border border-slate-800 bg-slate-100 px-3 py-1 font-bold w-16">담 당</th>
+              <th class="border border-slate-800 bg-slate-100 px-3 py-1 font-bold w-16">경 리</th>
+              <th class="border border-slate-800 bg-slate-100 px-3 py-1 font-bold w-16">소 장</th>
+            </tr>
+            <tr class="h-12">
+              <td class="border border-slate-800 text-[11px] font-bold text-slate-700" id="purPrintBuyerSign">담당</td>
+              <td class="border border-slate-800 text-[11px] font-bold text-emerald-700" id="purPrintVerifySign"></td>
+              <td class="border border-slate-800 text-[11px] text-slate-400"></td>
+            </tr>
+          </table>
+        </div>
+
+        <table class="w-full border-collapse border border-slate-800 text-xs">
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-2 px-3 w-24 font-bold text-left">구매 일자</th>
+            <td class="border border-slate-800 py-2 px-3 font-bold" id="purPrintDate">-</td>
+            <th class="border border-slate-800 bg-slate-100 py-2 px-3 w-24 font-bold text-left">구매자</th>
+            <td class="border border-slate-800 py-2 px-3 font-semibold" id="purPrintBuyer">-</td>
+          </tr>
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-2 px-3 font-bold text-left">구매 품목</th>
+            <td class="border border-slate-800 py-2 px-3 font-extrabold" id="purPrintItemName">-</td>
+            <th class="border border-slate-800 bg-slate-100 py-2 px-3 font-bold text-left">구매 금액</th>
+            <td class="border border-slate-800 py-2 px-3 font-extrabold text-indigo-800" id="purPrintAmount">-</td>
+          </tr>
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-2 px-3 font-bold text-left">구매처</th>
+            <td class="border border-slate-800 py-2 px-3" id="purPrintStore">-</td>
+            <th class="border border-slate-800 bg-slate-100 py-2 px-3 font-bold text-left">결제 수단</th>
+            <td class="border border-slate-800 py-2 px-3" id="purPrintPayMethod">-</td>
+          </tr>
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-2 px-3 font-bold text-left">사용 용도</th>
+            <td colspan="3" class="border border-slate-800 py-2 px-3" id="purPrintPurpose">-</td>
+          </tr>
+        </table>
+
+        <div class="grid grid-cols-2 gap-3 pt-1">
+          <div class="border border-slate-800 p-2.5 flex flex-col">
+            <span class="text-xs font-extrabold text-slate-800 mb-2 border-b border-slate-200 pb-1">1. 구매 물품 실물 사진</span>
+            <div id="purPrintItemPhotoBox" class="flex-1 min-h-[210px] flex items-center justify-center bg-slate-50 overflow-hidden"></div>
+          </div>
+          <div class="border border-slate-800 p-2.5 flex flex-col">
+            <span class="text-xs font-extrabold text-slate-800 mb-2 border-b border-slate-200 pb-1">2. 영수증 / 거래명세서 사진</span>
+            <div id="purPrintReceiptPhotoBox" class="flex-1 min-h-[210px] flex items-center justify-center bg-slate-50 overflow-hidden"></div>
+          </div>
+        </div>
+
+        <div class="pt-2 text-right text-xs font-bold text-slate-600" id="purPrintVerifiedText"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAFF ENTRY / RESIGNATION HANDOVER PRINT MODAL -->
+  <div id="staffHandoverPrintModal" class="hidden fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl w-full max-w-2xl p-6 sm:p-8 shadow-2xl space-y-5 text-slate-900">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3 no-print">
+        <span class="text-xs font-extrabold text-indigo-700"><i class="fa-solid fa-print mr-1"></i>입사·퇴사 업무 인수인계서 미리보기 (A4 인쇄)</span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="window.print()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow flex items-center gap-1.5">
+            <i class="fa-solid fa-print"></i> 바로 인쇄하기
+          </button>
+          <button type="button" onclick="closeStaffHandoverPrintModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">닫기</button>
+        </div>
+      </div>
+
+      <div class="border-2 border-slate-800 p-5 sm:p-7 space-y-5 bg-white">
+        <div class="flex items-start justify-between gap-4">
+          <div class="pt-1">
+            <p class="text-xs font-bold text-slate-500">호려울마을 7단지 관리사무소</p>
+            <h2 class="text-xl sm:text-2xl font-extrabold tracking-widest text-slate-900 mt-1 underline underline-offset-8">업 무 인 수 인 계 서</h2>
+          </div>
+          <table class="border-collapse border border-slate-800 text-center text-xs shrink-0">
+            <tr>
+              <th rowspan="2" class="border border-slate-800 bg-slate-100 px-2 py-2 font-bold w-8">확<br>인</th>
+              <th class="border border-slate-800 bg-slate-100 px-3 py-1 font-bold w-16">인계자</th>
+              <th class="border border-slate-800 bg-slate-100 px-3 py-1 font-bold w-16">인수자</th>
+              <th class="border border-slate-800 bg-slate-100 px-3 py-1 font-bold w-16">소 장</th>
+            </tr>
+            <tr class="h-12">
+              <td class="border border-slate-800 text-[11px] font-bold text-slate-700" id="shPrintSignGiver">서명</td>
+              <td class="border border-slate-800 text-[11px] font-bold text-emerald-700" id="shPrintSignReceiver"></td>
+              <td class="border border-slate-800 text-[11px] font-bold text-indigo-700" id="shPrintSignDirector"></td>
+            </tr>
+          </table>
+        </div>
+
+        <table class="w-full border-collapse border border-slate-800 text-xs sm:text-sm">
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-2.5 px-3 w-28 font-bold text-left">인계 구분</th>
+            <td class="border border-slate-800 py-2.5 px-3 font-bold text-indigo-800" id="shPrintType">-</td>
+            <th class="border border-slate-800 bg-slate-100 py-2.5 px-3 w-24 font-bold text-left">기준 일자</th>
+            <td class="border border-slate-800 py-2.5 px-3 font-semibold" id="shPrintDate">-</td>
+          </tr>
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-2.5 px-3 font-bold text-left">인계자(전임)</th>
+            <td class="border border-slate-800 py-2.5 px-3 font-extrabold" id="shPrintGiver">-</td>
+            <th class="border border-slate-800 bg-slate-100 py-2.5 px-3 font-bold text-left">인수자(후임)</th>
+            <td class="border border-slate-800 py-2.5 px-3 font-extrabold" id="shPrintReceiver">-</td>
+          </tr>
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-2.5 px-3 font-bold text-left">담당 업무명</th>
+            <td colspan="3" class="border border-slate-800 py-2.5 px-3 font-extrabold" id="shPrintTitle">-</td>
+          </tr>
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-2.5 px-3 font-bold text-left">필수 점검사항</th>
+            <td colspan="3" class="border border-slate-800 py-2.5 px-3 text-xs font-semibold" id="shPrintChecks">-</td>
+          </tr>
+          <tr>
+            <th class="border border-slate-800 bg-slate-100 py-6 px-3 font-bold text-left align-top">세부 인계<br>내역 및<br>특이사항</th>
+            <td colspan="3" class="border border-slate-800 py-4 px-3 align-top leading-relaxed whitespace-pre-line min-h-[140px]" id="shPrintContent">-</td>
+          </tr>
+        </table>
+
+        <div class="pt-3 text-center space-y-3">
+          <p class="text-xs sm:text-sm font-medium text-slate-700">위와 같이 담당 업무 및 관련 비품·서류 일체를 틀림없이 인계·인수하였음을 확인합니다.</p>
+          <div class="grid grid-cols-2 gap-4 text-xs sm:text-sm font-extrabold text-slate-900 pt-2 px-4">
+            <div class="text-left">인계자 : <span id="shPrintSignGiverBottom">-</span> (인)</div>
+            <div class="text-right">인수자 : <span id="shPrintSignReceiverBottom">-</span> (인)</div>
+          </div>
+          <p class="text-base font-extrabold text-slate-900 pt-2">호려울마을 7단지 관리사무소장 귀하</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="/src/main.tsx"></script>
