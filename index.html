@@ -24,7 +24,7 @@
 <body class="text-slate-800 antialiased min-h-screen flex flex-col items-center justify-between overflow-x-hidden">
 
   <!-- RESPONSIVE APP CONTAINER -->
-  <div id="appContainer" class="w-full max-w-4xl bg-white min-h-screen shadow-2xl flex flex-col relative pb-36 md:pb-24">
+  <div id="appContainer" class="w-full max-w-4xl bg-white min-h-screen shadow-2xl flex flex-col relative pb-6">
 
     <!-- LOGIN SCREEN OVERLAY -->
     <div id="loginScreen" class="fixed inset-0 z-50 bg-navy-800 flex flex-col justify-center items-center px-4 sm:px-6 py-8 text-white overflow-y-auto">
@@ -42,17 +42,23 @@
 
         <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
           <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">회사 공통 아이디</label>
+            <label for="loginWorkerSelect" class="block text-xs font-medium text-slate-300 mb-1">직원 선택</label>
             <div class="relative">
-              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                <i class="fa-solid fa-id-badge text-sm"></i>
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
+                <i class="fa-solid fa-user-check text-sm"></i>
               </span>
-              <input type="text" id="loginId" value="horyeoul7" placeholder="아이디 입력" required class="w-full pl-9 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
+              <select id="loginWorkerSelect" onchange="handleLoginWorkerChange(this.value)" class="w-full pl-9 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm font-semibold focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
+                <option value="__COMMON__">관리자 / 공용 접속</option>
+              </select>
             </div>
+            <p id="loginWorkerHint" class="mt-1 text-[11px] text-slate-400">등록된 직원 이름을 선택 후 비밀번호를 입력하세요.</p>
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">회사 공통 비밀번호</label>
+            <div class="flex items-center justify-between mb-1">
+              <label for="loginPw" class="block text-xs font-medium text-slate-300">비밀번호</label>
+              <span class="text-[10px] text-slate-400">공용 또는 개인 비밀번호</span>
+            </div>
             <div class="relative">
               <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                 <i class="fa-solid fa-lock text-sm"></i>
@@ -60,6 +66,11 @@
               <input type="password" id="loginPw" placeholder="비밀번호 입력" required class="w-full pl-9 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
             </div>
           </div>
+
+          <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
+            <input type="checkbox" id="loginRememberMe" class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500">
+            <span>이 기기에서 로그인 상태 유지 <span class="text-[10px] text-slate-400">(개인 휴대폰 추천)</span></span>
+          </label>
 
           <button type="submit" class="w-full py-3.5 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white font-bold rounded-xl shadow-lg shadow-brand-900/40 transition duration-200 flex items-center justify-center gap-2 text-base mt-2">
             <i class="fa-solid fa-right-to-bracket"></i> 로그인
@@ -75,17 +86,22 @@
     <!-- MAIN HEADER -->
     <header class="bg-brand-600 text-white px-3.5 py-3 sm:px-6 sm:py-4 sticky top-0 z-30 shadow-md">
       <div class="flex items-center justify-between gap-2 mb-2.5">
-        <div class="flex items-center space-x-2.5 min-w-0">
-          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center shadow-sm shrink-0">
+        <button type="button" onclick="switchTab('home')" class="flex items-center space-x-2.5 min-w-0 text-left group">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/20 group-hover:bg-white/30 border border-white/30 flex items-center justify-center shadow-sm shrink-0 transition">
             <i class="fa-solid fa-building text-white text-base sm:text-lg"></i>
           </div>
           <div class="min-w-0">
             <span class="text-[11px] sm:text-xs text-brand-100 font-semibold tracking-tight block truncate">호려울마을 7단지 관리사무소</span>
             <h2 class="text-base sm:text-lg font-extrabold leading-tight text-white truncate">공동 작업일지</h2>
           </div>
-        </div>
+        </button>
 
         <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <button id="headerHomeBtn" type="button" onclick="switchTab('home')" class="px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-bold rounded-xl bg-white/20 hover:bg-white/30 text-white border border-white/25 flex items-center gap-1.5 transition whitespace-nowrap" title="홈으로 이동">
+            <i class="fa-solid fa-house"></i>
+            <span>홈</span>
+          </button>
+
           <button id="adminToggleBtn" onclick="toggleAdminModeModal()" class="px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl bg-brand-800/70 hover:bg-brand-800 text-white border border-white/20 flex items-center gap-1.5 transition whitespace-nowrap">
             <i id="adminBtnIcon" class="fa-solid fa-user-shield text-brand-200"></i>
             <span id="adminBtnText">관리자 모드</span>
@@ -112,15 +128,230 @@
           </span>
         </div>
       </div>
+
+      <!-- SUB-PAGE HORIZONTAL QUICK TAB BAR (hidden on Home) -->
+      <nav id="quickTabBar" class="hidden mt-2.5 pt-2 border-t border-white/15 flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[11px] sm:text-xs">
+        <button type="button" onclick="switchTab('home')" id="quickNav-home" class="relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold transition flex items-center gap-1 whitespace-nowrap">
+          <i class="fa-solid fa-house text-[10px]"></i><span>홈</span>
+        </button>
+        <button type="button" onclick="switchTab('write')" id="quickNav-write" class="relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/25 text-white/90 font-semibold transition flex items-center gap-1 whitespace-nowrap">
+          <i class="fa-solid fa-pen-to-square text-[10px]"></i><span>일지작성</span>
+        </button>
+        <button type="button" onclick="switchTab('logs')" id="quickNav-logs" class="relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/25 text-white/90 font-semibold transition flex items-center gap-1 whitespace-nowrap">
+          <i class="fa-solid fa-list-check text-[10px]"></i><span>작업내역</span>
+        </button>
+        <button type="button" onclick="switchTab('plans')" id="quickNav-plans" class="relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/25 text-white/90 font-semibold transition flex items-center gap-1 whitespace-nowrap">
+          <i class="fa-solid fa-calendar-check text-[10px]"></i><span>업무계획</span>
+        </button>
+        <button type="button" onclick="switchTab('leave')" id="quickNav-leave" class="relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/25 text-white/90 font-semibold transition flex items-center gap-1 whitespace-nowrap">
+          <i class="fa-solid fa-umbrella-beach text-[10px]"></i><span>연차·휴가</span>
+          <span id="qDot-leave" class="hidden w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+        </button>
+        <button type="button" onclick="switchTab('chat')" id="quickNav-chat" class="relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/25 text-white/90 font-semibold transition flex items-center gap-1 whitespace-nowrap">
+          <i class="fa-solid fa-comments text-[10px]"></i><span>직원채팅</span>
+          <span id="qDot-chat" class="hidden w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
+        </button>
+        <button type="button" onclick="switchTab('handover')" id="quickNav-handover" class="relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/25 text-white/90 font-semibold transition flex items-center gap-1 whitespace-nowrap">
+          <i class="fa-solid fa-bullhorn text-[10px]"></i><span>인수인계</span>
+          <span id="qDot-handover" class="hidden w-1.5 h-1.5 rounded-full bg-amber-300"></span>
+        </button>
+        <button type="button" onclick="switchTab('tools')" id="quickNav-tools" class="relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/25 text-white/90 font-semibold transition flex items-center gap-1 whitespace-nowrap">
+          <i class="fa-solid fa-toolbox text-[10px]"></i><span>공구관리</span>
+          <span id="qDot-tools" class="hidden w-1.5 h-1.5 rounded-full bg-amber-300"></span>
+        </button>
+        <button type="button" onclick="switchTab('vendors')" id="quickNav-vendors" class="relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/25 text-white/90 font-semibold transition flex items-center gap-1 whitespace-nowrap">
+          <i class="fa-solid fa-address-book text-[10px]"></i><span>수리업체</span>
+        </button>
+        <button type="button" onclick="switchTab('purchases')" id="quickNav-purchases" class="relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/25 text-white/90 font-semibold transition flex items-center gap-1 whitespace-nowrap">
+          <i class="fa-solid fa-receipt text-[10px]"></i><span>물품구매</span>
+          <span id="qDot-purchases" class="hidden w-1.5 h-1.5 rounded-full bg-sky-300"></span>
+        </button>
+        <button type="button" onclick="switchTab('admin')" id="quickNav-admin" class="relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/25 text-white/90 font-semibold transition flex items-center gap-1 whitespace-nowrap">
+          <i class="fa-solid fa-sliders text-[10px]"></i><span>관리자</span>
+          <span id="qDot-admin" class="hidden w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+        </button>
+      </nav>
     </header>
 
     <!-- CONTENT TABS BODY -->
     <main class="flex-1 p-3.5 sm:p-6 overflow-y-auto">
 
-      <!-- TAB 1: WRITE WORK LOG -->
-      <section id="tab-write" class="max-w-2xl mx-auto space-y-4">
+      <!-- TAB 0: HOME PORTAL (홈) -->
+      <section id="tab-home" class="space-y-4">
+        <!-- 행사 · 경조사 배너 -->
         <div id="homeEventBannerWrapper" class="hidden">
           <div id="homeEventBannerCard" class="rounded-2xl p-3.5 shadow-sm border transition-all relative overflow-hidden"></div>
+        </div>
+
+        <!-- 홈 상단 오늘 요약 & 빠른 일지작성 배너 -->
+        <div class="bg-gradient-to-r from-navy-800 to-brand-700 text-white rounded-2xl p-4 sm:p-5 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2 py-0.5 bg-white/15 border border-white/25 rounded-full text-[10px] font-bold">호려울마을 7단지 관리사무소</span>
+              <span id="homeTodayDateText" class="text-xs font-bold text-brand-100"></span>
+            </div>
+            <h3 class="text-base sm:text-lg font-extrabold tracking-tight">오늘의 업무 현황 및 전체 메뉴</h3>
+            <p class="text-[11px] sm:text-xs text-slate-200">원하는 메뉴를 선택하거나 아래 공지사항과 일일·주간·월간 업무계획을 확인하세요.</p>
+          </div>
+          <button type="button" onclick="switchTab('write')" class="shrink-0 px-4 py-2.5 bg-white hover:bg-brand-50 text-navy-900 font-extrabold rounded-xl text-xs sm:text-sm shadow transition flex items-center justify-center gap-2 whitespace-nowrap">
+            <i class="fa-solid fa-pen-to-square text-brand-600"></i> 일지작성 바로가기
+          </button>
+        </div>
+
+        <!-- 10개 주요 메뉴 가지런히 배치 -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-sm space-y-2.5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-grid-2 text-brand-600"></i> 전체 업무 메뉴 바로가기 (10개)
+            </h3>
+            <span class="text-[10px] sm:text-[11px] text-slate-400 font-medium">아이콘을 눌러 이동하세요</span>
+          </div>
+
+          <div class="grid grid-cols-5 gap-1.5 sm:gap-2.5">
+            <button type="button" onclick="switchTab('write')" class="relative group p-2 sm:p-3 rounded-xl bg-brand-50/70 hover:bg-brand-100/80 border border-brand-200 flex flex-col items-center justify-center gap-1.5 transition">
+              <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition">
+                <i class="fa-solid fa-pen-to-square text-sm sm:text-base"></i>
+              </div>
+              <span class="text-[10.5px] sm:text-xs font-extrabold text-slate-800 whitespace-nowrap">일지작성</span>
+            </button>
+
+            <button type="button" onclick="switchTab('logs')" class="relative group p-2 sm:p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex flex-col items-center justify-center gap-1.5 transition">
+              <span id="homeBadge-logs" class="hidden absolute top-1 right-1 px-1.5 py-0.2 bg-brand-600 text-white rounded-full text-[9px] font-extrabold">0</span>
+              <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition">
+                <i class="fa-solid fa-list-check text-sm sm:text-base"></i>
+              </div>
+              <span class="text-[10.5px] sm:text-xs font-bold text-slate-800 whitespace-nowrap">작업내역</span>
+            </button>
+
+            <button type="button" onclick="switchTab('plans')" class="relative group p-2 sm:p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex flex-col items-center justify-center gap-1.5 transition">
+              <span id="homeBadge-plans" class="hidden absolute top-1 right-1 px-1.5 py-0.2 bg-indigo-600 text-white rounded-full text-[9px] font-extrabold">0</span>
+              <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition">
+                <i class="fa-solid fa-calendar-check text-sm sm:text-base"></i>
+              </div>
+              <span class="text-[10.5px] sm:text-xs font-bold text-slate-800 whitespace-nowrap">업무계획</span>
+            </button>
+
+            <button type="button" onclick="switchTab('leave')" class="relative group p-2 sm:p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex flex-col items-center justify-center gap-1.5 transition">
+              <span id="homeDot-leave" class="hidden absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
+              <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition">
+                <i class="fa-solid fa-umbrella-beach text-sm sm:text-base"></i>
+              </div>
+              <span class="text-[10.5px] sm:text-xs font-bold text-slate-800 whitespace-nowrap">연차·휴가</span>
+            </button>
+
+            <button type="button" onclick="switchTab('chat')" class="relative group p-2 sm:p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex flex-col items-center justify-center gap-1.5 transition">
+              <span id="homeDot-chat" class="hidden absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
+              <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition">
+                <i class="fa-solid fa-comments text-sm sm:text-base"></i>
+              </div>
+              <span class="text-[10.5px] sm:text-xs font-bold text-slate-800 whitespace-nowrap">직원채팅</span>
+            </button>
+
+            <button type="button" onclick="switchTab('handover')" class="relative group p-2 sm:p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex flex-col items-center justify-center gap-1.5 transition">
+              <span id="homeDot-handover" class="hidden absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition">
+                <i class="fa-solid fa-bullhorn text-sm sm:text-base"></i>
+              </div>
+              <span class="text-[10.5px] sm:text-xs font-bold text-slate-800 whitespace-nowrap">인수인계</span>
+            </button>
+
+            <button type="button" onclick="switchTab('tools')" class="relative group p-2 sm:p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex flex-col items-center justify-center gap-1.5 transition">
+              <span id="homeDot-tools" class="hidden absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full"></span>
+              <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-orange-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition">
+                <i class="fa-solid fa-toolbox text-sm sm:text-base"></i>
+              </div>
+              <span class="text-[10.5px] sm:text-xs font-bold text-slate-800 whitespace-nowrap">공구관리</span>
+            </button>
+
+            <button type="button" onclick="switchTab('vendors')" class="relative group p-2 sm:p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex flex-col items-center justify-center gap-1.5 transition">
+              <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-violet-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition">
+                <i class="fa-solid fa-address-book text-sm sm:text-base"></i>
+              </div>
+              <span class="text-[10.5px] sm:text-xs font-bold text-slate-800 whitespace-nowrap">수리업체</span>
+            </button>
+
+            <button type="button" onclick="switchTab('purchases')" class="relative group p-2 sm:p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex flex-col items-center justify-center gap-1.5 transition">
+              <span id="homeDot-purchases" class="hidden absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-500 rounded-full"></span>
+              <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition">
+                <i class="fa-solid fa-receipt text-sm sm:text-base"></i>
+              </div>
+              <span class="text-[10.5px] sm:text-xs font-bold text-slate-800 whitespace-nowrap">물품구매</span>
+            </button>
+
+            <button type="button" onclick="switchTab('admin')" class="relative group p-2 sm:p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex flex-col items-center justify-center gap-1.5 transition">
+              <span id="homeDot-admin" class="hidden absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
+              <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-slate-700 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition">
+                <i class="fa-solid fa-sliders text-sm sm:text-base"></i>
+              </div>
+              <span class="text-[10.5px] sm:text-xs font-bold text-slate-800 whitespace-nowrap">관리자</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 홈 공지사항 & 업무계획(일일·주간·월간) 실시간 확인 -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+          <!-- 공지사항 · 주요 인수인계 -->
+          <div class="md:col-span-5 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-bullhorn text-amber-500"></i> 공지사항 · 주요 인수인계
+              </h3>
+              <button type="button" onclick="switchTab('handover')" class="text-[11px] font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1 shrink-0">
+                전체 보기 <i class="fa-solid fa-chevron-right text-[9px]"></i>
+              </button>
+            </div>
+            <div id="homeNoticeList" class="space-y-2"></div>
+          </div>
+
+          <!-- 일일계획 · 주간계획 · 월간계획 -->
+          <div class="md:col-span-7 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-calendar-check text-indigo-600"></i> 업무계획 확인 (일일 · 주간 · 월간)
+              </h3>
+              <button type="button" onclick="switchTab('plans')" class="text-[11px] font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1 shrink-0">
+                계획 관리 <i class="fa-solid fa-chevron-right text-[9px]"></i>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-4 gap-1.5 bg-slate-100 p-1 rounded-xl text-[11px] sm:text-xs">
+              <button type="button" onclick="setHomePlanMode('ALL')" id="homePlanTab-ALL" class="py-1.5 px-1.5 rounded-lg bg-navy-800 text-white font-bold transition flex items-center justify-center gap-1 whitespace-nowrap">
+                <span>전체</span>
+                <span id="homePlanCount-ALL" class="px-1.5 rounded-full bg-white/20 text-[10px]">0</span>
+              </button>
+              <button type="button" onclick="setHomePlanMode('DAILY')" id="homePlanTab-DAILY" class="py-1.5 px-1.5 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition flex items-center justify-center gap-1 whitespace-nowrap">
+                <span>일일계획</span>
+                <span id="homePlanCount-DAILY" class="px-1.5 rounded-full bg-slate-200 text-slate-700 text-[10px]">0</span>
+              </button>
+              <button type="button" onclick="setHomePlanMode('WEEKLY')" id="homePlanTab-WEEKLY" class="py-1.5 px-1.5 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition flex items-center justify-center gap-1 whitespace-nowrap">
+                <span>주간계획</span>
+                <span id="homePlanCount-WEEKLY" class="px-1.5 rounded-full bg-slate-200 text-slate-700 text-[10px]">0</span>
+              </button>
+              <button type="button" onclick="setHomePlanMode('MONTHLY')" id="homePlanTab-MONTHLY" class="py-1.5 px-1.5 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition flex items-center justify-center gap-1 whitespace-nowrap">
+                <span>월간계획</span>
+                <span id="homePlanCount-MONTHLY" class="px-1.5 rounded-full bg-slate-200 text-slate-700 text-[10px]">0</span>
+              </button>
+            </div>
+
+            <div id="homePlanList" class="space-y-2 max-h-80 overflow-y-auto pr-0.5"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 1: WRITE WORK LOG -->
+      <section id="tab-write" class="hidden max-w-2xl mx-auto space-y-4">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <button type="button" onclick="switchTab('home')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-arrow-left text-[11px]"></i> 홈으로
+          </button>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="switchTab('logs')" class="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+              <i class="fa-solid fa-list-check text-[11px]"></i> 오늘 작업내역
+            </button>
+            <button type="button" onclick="switchTab('plans')" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+              <i class="fa-solid fa-calendar-check text-[11px]"></i> 업무계획
+            </button>
+          </div>
         </div>
 
         <div id="workerAlertBanner" class="bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-start gap-2.5 text-amber-800 text-xs">
@@ -149,16 +380,26 @@
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1.5">민원 · 작업 구분</label>
             <input type="hidden" id="logCategory" value="공용민원">
-            <div class="grid grid-cols-3 gap-2">
-              <button type="button" onclick="selectLogCategory('공용민원')" id="logCatBtn-공용민원" class="py-2.5 px-2 rounded-xl bg-brand-600 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1">
-                <span>🏢 공용민원</span>
-              </button>
-              <button type="button" onclick="selectLogCategory('세대민원')" id="logCatBtn-세대민원" class="py-2.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1">
-                <span>🏠 세대민원</span>
-              </button>
-              <button type="button" onclick="selectLogCategory('정기점검')" id="logCatBtn-정기점검" class="py-2.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1">
-                <span>🔍 정기점검</span>
-              </button>
+            <div class="space-y-2">
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" onclick="selectLogCategory('공용민원')" id="logCatBtn-공용민원" class="py-2.5 px-2 rounded-xl bg-brand-600 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1 whitespace-nowrap">
+                  <span>🏢 공용민원</span>
+                </button>
+                <button type="button" onclick="selectLogCategory('세대민원')" id="logCatBtn-세대민원" class="py-2.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1 whitespace-nowrap">
+                  <span>🏠 세대민원</span>
+                </button>
+                <button type="button" onclick="selectLogCategory('정기점검')" id="logCatBtn-정기점검" class="py-2.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1 whitespace-nowrap">
+                  <span>🔍 정기점검</span>
+                </button>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="selectLogCategory('세대민원(긴급)')" id="logCatBtn-세대민원(긴급)" class="py-2.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1 whitespace-nowrap">
+                  <span>🚨 세대민원(긴급)</span>
+                </button>
+                <button type="button" onclick="selectLogCategory('하자보수')" id="logCatBtn-하자보수" class="py-2.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1 whitespace-nowrap">
+                  <span>🔧 하자보수</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -205,41 +446,79 @@
           </div>
 
           <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="text-xs font-semibold text-slate-600">작업 완료 사진 (선택)</label>
-              <span class="text-[11px] text-slate-400">클라우드 자동 압축 저장</span>
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <label class="text-xs font-semibold text-slate-600">작업 완료 사진 · 동영상 (선택)</label>
+              <span class="text-[10.5px] text-slate-400 font-medium">EXIF 삭제·50% 축소 / 동영상 자동압축</span>
             </div>
 
             <label class="cursor-pointer flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-xl bg-slate-50 hover:bg-brand-50/40 transition text-center w-full">
-              <i class="fa-solid fa-camera text-brand-600 text-lg mb-1"></i>
-              <span class="text-xs font-semibold text-slate-700">사진 첨부 / 촬영</span>
-              <input type="file" id="logPhotoInput" accept="image/*" onchange="handlePhotoUpload(event)" class="hidden">
+              <div class="flex items-center gap-2 text-brand-600 text-lg mb-1">
+                <i class="fa-solid fa-camera"></i>
+                <i class="fa-solid fa-video"></i>
+              </div>
+              <span class="text-xs font-semibold text-slate-700">사진 · 동영상 첨부 / 촬영</span>
+              <input type="file" id="logPhotoInput" accept="image/*,video/*" onchange="handlePhotoUpload(event)" class="hidden">
             </label>
+
+            <div id="logMediaProgressBox" class="hidden mt-2.5 p-3 rounded-xl border border-brand-200 bg-brand-50/70 space-y-1.5">
+              <div class="flex items-center justify-between gap-2 text-[11px] font-bold text-brand-800">
+                <span id="logMediaProgressText" class="truncate"><i class="fa-solid fa-spinner fa-spin mr-1"></i>미디어 최적화 압축 중...</span>
+                <button type="button" onclick="cancelMediaCompression()" class="px-2 py-0.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-md text-[10px] font-bold shrink-0">취소</button>
+              </div>
+              <div class="w-full h-2 bg-white rounded-full overflow-hidden border border-brand-200">
+                <div id="logMediaProgressBar" class="h-full bg-brand-600 transition-all duration-200" style="width: 0%"></div>
+              </div>
+            </div>
 
             <div id="photoPreviewBox" class="hidden mt-3 relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
               <img id="photoPreviewImg" src="" alt="미리보기" class="w-full h-44 object-cover">
-              <button type="button" onclick="clearPhoto()" class="absolute top-2 right-2 w-7 h-7 bg-slate-900/75 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition shadow">
+              <video id="photoPreviewVideo" controls playsinline class="hidden w-full h-48 object-contain bg-black"></video>
+              <button type="button" onclick="clearPhoto()" class="absolute top-2 right-2 w-7 h-7 bg-slate-900/75 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition shadow z-10">
                 <i class="fa-solid fa-xmark"></i>
               </button>
-              <span id="photoCaptionTag" class="absolute bottom-2 left-2 px-2 py-0.5 bg-slate-900/70 text-white text-[10px] rounded-md">첨부된 사진</span>
+              <span id="photoCaptionTag" class="absolute bottom-2 left-2 px-2 py-0.5 bg-slate-900/75 text-white text-[10px] font-semibold rounded-md">첨부된 미디어</span>
             </div>
           </div>
 
-          <button type="submit" class="w-full py-3.5 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-sm sm:text-base">
-            <i class="fa-solid fa-cloud-arrow-up"></i> 작업일지 등록하기
-          </button>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <button type="submit" onclick="setWriteNextAction('logs')" class="w-full py-3.5 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs sm:text-sm">
+              <i class="fa-solid fa-cloud-arrow-up"></i> 등록 후 작업내역 보기
+            </button>
+            <button type="submit" onclick="setWriteNextAction('stay')" class="w-full py-3.5 bg-navy-800 hover:bg-navy-700 active:bg-slate-900 text-white font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-xs sm:text-sm">
+              <i class="fa-solid fa-circle-plus"></i> 등록하고 계속 쓰기
+            </button>
+          </div>
         </form>
       </section>
 
       <!-- TAB 2: ALL WORK LOGS & CALENDAR VIEW -->
       <section id="tab-logs" class="hidden space-y-4">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <button type="button" onclick="switchTab('home')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-arrow-left text-[11px]"></i> 홈으로
+          </button>
+          <button type="button" onclick="switchTab('write')" class="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5">
+            <i class="fa-solid fa-pen-to-square text-[11px]"></i> + 새 작업일지 작성
+          </button>
+        </div>
+
         <div class="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-3">
           <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs">
             <button type="button" onclick="setLogViewMode('LIST')" id="logViewBtn-LIST" class="py-2 px-2 rounded-lg bg-brand-600 text-white font-extrabold shadow-xs transition flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-list"></i> 전체 목록 보기
+              <i class="fa-solid fa-list"></i> 오늘 작업내역
             </button>
             <button type="button" onclick="setLogViewMode('CALENDAR')" id="logViewBtn-CALENDAR" class="py-2 px-2 rounded-lg text-slate-600 hover:text-slate-900 font-bold transition flex items-center justify-center gap-1.5">
-              <i class="fa-regular fa-calendar-days"></i> 달력으로 보기
+              <i class="fa-regular fa-calendar-days"></i> 달력으로 보기 (지난 기록)
+            </button>
+          </div>
+
+          <div id="logsTodayResetBanner" class="bg-teal-50 border border-teal-200 rounded-xl px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
+            <div class="text-teal-900 font-semibold flex items-center gap-1.5">
+              <i class="fa-solid fa-clock-rotate-left text-teal-600 shrink-0"></i>
+              <span id="logsTodayResetText">오늘 작업내역만 표시 중 · 자정이 지나면 자동 초기화되며 어제·지난 기록은 달력에서 확인합니다.</span>
+            </div>
+            <button type="button" onclick="openYesterdayInCalendar()" class="shrink-0 px-2.5 py-1 bg-white hover:bg-teal-100 text-teal-800 border border-teal-300 rounded-lg font-bold transition self-start sm:self-auto whitespace-nowrap">
+              <i class="fa-regular fa-calendar mr-1"></i>어제·지난 기록 보기 →
             </button>
           </div>
 
@@ -258,7 +537,7 @@
                 <i class="fa-solid fa-rotate-left"></i> 전체 보기
               </button>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-slate-100 p-1 rounded-xl text-[11px] sm:text-xs">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl text-[11px] sm:text-xs">
               <button type="button" onclick="setLogCategoryFilter('ALL')" id="logCatFilter-ALL" class="py-2 px-2 rounded-lg bg-navy-800 text-white font-bold shadow-xs transition flex items-center justify-center gap-1 whitespace-nowrap">
                 <span>전체</span>
                 <span id="logCatCount-ALL" class="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-extrabold">0</span>
@@ -271,9 +550,17 @@
                 <span>🏠 세대민원</span>
                 <span id="logCatCount-세대민원" class="px-1.5 py-0.2 rounded-full bg-slate-200/80 text-slate-600 text-[10px] font-extrabold">0</span>
               </button>
+              <button type="button" onclick="setLogCategoryFilter('세대민원(긴급)')" id="logCatFilter-세대민원(긴급)" class="py-2 px-2 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition flex items-center justify-center gap-1 whitespace-nowrap">
+                <span>🚨 세대민원(긴급)</span>
+                <span id="logCatCount-세대민원(긴급)" class="px-1.5 py-0.2 rounded-full bg-slate-200/80 text-slate-600 text-[10px] font-extrabold">0</span>
+              </button>
               <button type="button" onclick="setLogCategoryFilter('정기점검')" id="logCatFilter-정기점검" class="py-2 px-2 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition flex items-center justify-center gap-1 whitespace-nowrap">
                 <span>🔍 정기점검</span>
                 <span id="logCatCount-정기점검" class="px-1.5 py-0.2 rounded-full bg-slate-200/80 text-slate-600 text-[10px] font-extrabold">0</span>
+              </button>
+              <button type="button" onclick="setLogCategoryFilter('하자보수')" id="logCatFilter-하자보수" class="py-2 px-2 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition flex items-center justify-center gap-1 whitespace-nowrap">
+                <span>🔧 하자보수</span>
+                <span id="logCatCount-하자보수" class="px-1.5 py-0.2 rounded-full bg-slate-200/80 text-slate-600 text-[10px] font-extrabold">0</span>
               </button>
             </div>
           </div>
@@ -351,9 +638,14 @@
             <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2 min-w-0">
               <i class="fa-solid fa-calendar-check text-brand-600 shrink-0"></i> <span class="truncate">관리사무소 업무계획표</span>
             </h3>
-            <button type="button" onclick="togglePlanAddForm()" class="px-2.5 py-1.5 bg-navy-800 hover:bg-navy-700 text-white rounded-lg text-[11px] sm:text-xs font-bold transition flex items-center gap-1 shrink-0 whitespace-nowrap">
-              <i class="fa-solid fa-plus"></i> 계획 등록
-            </button>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button type="button" onclick="switchTab('write')" class="px-2.5 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-lg text-[11px] sm:text-xs font-bold transition flex items-center gap-1 whitespace-nowrap">
+                <i class="fa-solid fa-pen-to-square"></i> 일지작성
+              </button>
+              <button type="button" onclick="togglePlanAddForm()" class="px-2.5 py-1.5 bg-navy-800 hover:bg-navy-700 text-white rounded-lg text-[11px] sm:text-xs font-bold transition flex items-center gap-1 whitespace-nowrap">
+                <i class="fa-solid fa-plus"></i> 계획 등록
+              </button>
+            </div>
           </div>
 
           <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs">
@@ -1229,11 +1521,13 @@
                   <label class="cursor-pointer flex flex-col items-center justify-center p-3 border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-xl bg-slate-50 hover:bg-brand-50/40 transition text-center">
                     <i class="fa-solid fa-box-open text-brand-600 text-base mb-1"></i>
                     <span class="text-[11px] font-bold text-slate-700">물품 사진 촬영/첨부</span>
+                    <span class="text-[9.5px] text-slate-400 mt-0.5">EXIF 삭제 · 50% 압축</span>
                     <input type="file" id="purchaseItemPhotoInput" accept="image/*" onchange="handlePurchasePhoto(event, 'item')" class="hidden">
                   </label>
                   <div id="purchaseItemPreviewBox" class="hidden mt-1.5 relative rounded-xl overflow-hidden border border-slate-200">
                     <img id="purchaseItemPreviewImg" src="" alt="물품사진" class="w-full h-24 object-cover">
                     <button type="button" onclick="clearPurchasePhoto('item')" class="absolute top-1 right-1 w-6 h-6 bg-slate-900/75 text-white rounded-full text-[10px] flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                    <span id="purchaseItemOptTag" class="hidden absolute bottom-1 left-1 px-1.5 py-0.5 bg-slate-900/75 text-white text-[9px] font-semibold rounded">EXIF 삭제 · 50%</span>
                   </div>
                 </div>
 
@@ -1242,11 +1536,13 @@
                   <label class="cursor-pointer flex flex-col items-center justify-center p-3 border-2 border-dashed border-indigo-300 hover:border-indigo-500 rounded-xl bg-indigo-50/40 hover:bg-indigo-50 transition text-center">
                     <i class="fa-solid fa-file-invoice-dollar text-indigo-600 text-base mb-1"></i>
                     <span class="text-[11px] font-bold text-indigo-900">영수증 촬영/첨부</span>
+                    <span class="text-[9.5px] text-indigo-500 mt-0.5">EXIF 삭제 · 50% 압축</span>
                     <input type="file" id="purchaseReceiptPhotoInput" accept="image/*" onchange="handlePurchasePhoto(event, 'receipt')" class="hidden">
                   </label>
                   <div id="purchaseReceiptPreviewBox" class="hidden mt-1.5 relative rounded-xl overflow-hidden border border-slate-200">
                     <img id="purchaseReceiptPreviewImg" src="" alt="영수증사진" class="w-full h-24 object-cover">
                     <button type="button" onclick="clearPurchasePhoto('receipt')" class="absolute top-1 right-1 w-6 h-6 bg-slate-900/75 text-white rounded-full text-[10px] flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                    <span id="purchaseReceiptOptTag" class="hidden absolute bottom-1 left-1 px-1.5 py-0.5 bg-slate-900/75 text-white text-[9px] font-semibold rounded">EXIF 삭제 · 50%</span>
                   </div>
                 </div>
               </div>
@@ -1282,7 +1578,7 @@
       </section>
 
       <!-- TAB: STAFF CHAT -->
-      <section id="tab-chat" class="hidden max-w-2xl mx-auto flex flex-col h-[calc(100vh-215px)] md:h-[calc(100vh-185px)] min-h-[420px]">
+      <section id="tab-chat" class="hidden max-w-2xl mx-auto flex flex-col h-[calc(100vh-248px)] md:h-[calc(100vh-225px)] min-h-[380px]">
         <div class="bg-white border border-slate-200 rounded-t-2xl px-3.5 py-2.5 flex items-center justify-between gap-2 shadow-xs">
           <div class="flex items-center gap-2 min-w-0">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
@@ -1448,14 +1744,13 @@
                 <span class="text-[11px] text-slate-500">등록 후 즉시 선택 가능</span>
               </div>
 
-              <form onsubmit="handleAddStaff(event)" class="flex flex-col sm:flex-row gap-2">
-                <input type="text" id="newStaffName" placeholder="이름 (예: 홍길동)" required class="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                <div class="flex gap-2">
-                  <input type="text" id="newStaffRole" placeholder="직책 (예: 시설기사)" required class="flex-1 sm:w-28 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                  <button type="submit" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs shrink-0 transition flex items-center justify-center gap-1 whitespace-nowrap">
-                    <i class="fa-solid fa-plus"></i> 등록
-                  </button>
-                </div>
+              <form onsubmit="handleAddStaff(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                <input type="text" id="newStaffName" placeholder="이름 (예: 홍길동)" required class="sm:col-span-4 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <input type="text" id="newStaffRole" placeholder="직책 (예: 시설기사)" required class="sm:col-span-3 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <input type="text" id="newStaffPin" placeholder="개인 비번 (선택·미입력 시 공용)" autocomplete="off" class="sm:col-span-3 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                <button type="submit" class="sm:col-span-2 px-3.5 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1 whitespace-nowrap">
+                  <i class="fa-solid fa-plus"></i> 등록
+                </button>
               </form>
 
               <div class="mt-3 space-y-1.5" id="staffListContainer"></div>
@@ -1532,74 +1827,6 @@
 
     </main>
 
-    <!-- FIXED BOTTOM NAVIGATION & FOOTER BAR -->
-    <div class="fixed bottom-0 left-0 right-0 w-full z-40 flex flex-col items-center pointer-events-none">
-      <div class="w-full max-w-4xl pointer-events-auto shadow-2xl">
-        <nav class="w-full bg-navy-800 border-t border-slate-700/80 px-2 sm:px-3 py-1.5 grid grid-cols-5 md:grid-cols-10 gap-1">
-          <button onclick="switchTab('write')" id="nav-write" class="relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl bg-brand-600 text-white flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-bold shadow-sm transition-all duration-200">
-            <i class="fa-solid fa-pen-to-square text-sm lg:text-xs"></i>
-            <span class="text-[11px] lg:text-xs leading-tight whitespace-nowrap">일지작성</span>
-          </button>
-
-          <button onclick="switchTab('logs')" id="nav-logs" class="relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-semibold transition-all duration-200">
-            <i class="fa-solid fa-list-check text-sm lg:text-xs"></i>
-            <span class="text-[11px] lg:text-xs leading-tight whitespace-nowrap">작업내역</span>
-          </button>
-
-          <button onclick="switchTab('plans')" id="nav-plans" class="relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-semibold transition-all duration-200">
-            <i class="fa-solid fa-calendar-check text-sm lg:text-xs"></i>
-            <span class="text-[11px] lg:text-xs leading-tight whitespace-nowrap">업무계획</span>
-          </button>
-
-          <button onclick="switchTab('leave')" id="nav-leave" class="relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-semibold transition-all duration-200">
-            <span id="todayLeaveDot" class="hidden absolute top-1 right-2 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
-            <i class="fa-solid fa-umbrella-beach text-sm lg:text-xs"></i>
-            <span class="text-[11px] lg:text-xs leading-tight whitespace-nowrap">연차·휴가</span>
-          </button>
-
-          <button onclick="switchTab('chat')" id="nav-chat" class="relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-semibold transition-all duration-200">
-            <span id="unreadChatDot" class="hidden absolute top-1 right-2 w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
-            <span id="unreadChatDotSolid" class="hidden absolute top-1 right-2 w-2 h-2 bg-rose-500 rounded-full"></span>
-            <i class="fa-solid fa-comments text-sm lg:text-xs"></i>
-            <span class="text-[11px] lg:text-xs leading-tight whitespace-nowrap">직원채팅</span>
-          </button>
-
-          <button onclick="switchTab('handover')" id="nav-handover" class="relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-semibold transition-all duration-200">
-            <span id="unconfirmedDot" class="hidden absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-            <i class="fa-solid fa-bullhorn text-sm lg:text-xs"></i>
-            <span class="text-[11px] lg:text-xs leading-tight whitespace-nowrap">인수인계</span>
-          </button>
-
-          <button onclick="switchTab('tools')" id="nav-tools" class="relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-semibold transition-all duration-200">
-            <span id="rentedToolsDot" class="hidden absolute top-1 right-2 w-2 h-2 bg-amber-500 rounded-full"></span>
-            <i class="fa-solid fa-toolbox text-sm lg:text-xs"></i>
-            <span class="text-[11px] lg:text-xs leading-tight whitespace-nowrap">공구관리</span>
-          </button>
-
-          <button onclick="switchTab('vendors')" id="nav-vendors" class="relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-semibold transition-all duration-200">
-            <i class="fa-solid fa-address-book text-sm lg:text-xs"></i>
-            <span class="text-[11px] lg:text-xs leading-tight whitespace-nowrap">수리업체</span>
-          </button>
-
-          <button onclick="switchTab('purchases')" id="nav-purchases" class="relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-semibold transition-all duration-200">
-            <span id="unverifiedPurchaseDot" class="hidden absolute top-1 right-2 w-2 h-2 bg-indigo-400 rounded-full"></span>
-            <i class="fa-solid fa-receipt text-sm lg:text-xs"></i>
-            <span class="text-[11px] lg:text-xs leading-tight whitespace-nowrap">물품구매</span>
-          </button>
-
-          <button onclick="switchTab('admin')" id="nav-admin" class="relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-semibold transition-all duration-200">
-            <span id="adminReturnAlertDot" class="hidden absolute top-1 right-2 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
-            <i class="fa-solid fa-sliders text-sm lg:text-xs"></i>
-            <span class="text-[11px] lg:text-xs leading-tight whitespace-nowrap">관리자</span>
-          </button>
-        </nav>
-
-        <footer class="bg-slate-900 border-t border-slate-800 py-1.5 px-3 pb-[calc(0.375rem+env(safe-area-inset-bottom))] text-center text-[10px] sm:text-xs text-slate-300 font-medium flex items-center justify-center gap-1.5">
-          <span id="cloudStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
-          <span id="cloudStatusText" class="truncate">클라우드 실시간 서버 연결 중...</span>
-        </footer>
-      </div>
-    </div>
   </div>
 
   <!-- TOAST NOTIFICATION CONTAINER -->
@@ -1626,7 +1853,9 @@
             <select id="editLogCategory" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-800">
               <option value="공용민원">🏢 공용민원</option>
               <option value="세대민원">🏠 세대민원</option>
+              <option value="세대민원(긴급)">🚨 세대민원(긴급)</option>
               <option value="정기점검">🔍 정기점검</option>
+              <option value="하자보수">🔧 하자보수</option>
             </select>
           </div>
         </div>
@@ -1708,6 +1937,10 @@
           <label class="block text-xs font-semibold text-slate-600 mb-1">직책 / 담당</label>
           <input type="text" id="editStaffRoleInput" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm">
         </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">개인 로그인 비밀번호 <span class="text-[11px] font-normal text-slate-400">(선택 · 비워두면 공용 비번 사용)</span></label>
+          <input type="text" id="editStaffPinInput" placeholder="예: 1122 (미입력 시 공용 비밀번호)" autocomplete="off" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm">
+        </div>
         <div class="flex gap-2 pt-2">
           <button type="button" onclick="closeEditStaffModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm">취소</button>
           <button type="submit" class="flex-1 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-sm shadow">변경 저장</button>
@@ -1733,12 +1966,13 @@
     </div>
   </div>
 
-  <!-- FULL IMAGE LIGHTBOX MODAL -->
+  <!-- FULL IMAGE / VIDEO LIGHTBOX MODAL -->
   <div id="imageLightbox" class="hidden fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onclick="closeLightbox()">
-    <button onclick="closeLightbox()" class="absolute top-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/40 text-white rounded-full flex items-center justify-center text-lg">
+    <button onclick="closeLightbox()" class="absolute top-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/40 text-white rounded-full flex items-center justify-center text-lg z-10">
       <i class="fa-solid fa-xmark"></i>
     </button>
     <img id="lightboxImg" src="" alt="확대 이미지" class="max-w-full max-h-[85vh] rounded-xl shadow-2xl object-contain">
+    <video id="lightboxVideo" controls playsinline onclick="event.stopPropagation()" class="hidden max-w-full max-h-[85vh] rounded-xl shadow-2xl bg-black"></video>
   </div>
 
   <!-- LEAVE / VACATION APPROVAL PRINT MODAL -->

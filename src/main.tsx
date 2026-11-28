@@ -84,6 +84,7 @@ interface AppState {
   selectedCalendarDate: string;
   planPeriodType: string;
   planBaseDate: string;
+  homePlanMode: string;
   leaveFilter: string;
   handoverFolderMode: string;
   handoverFilter: string;
@@ -118,7 +119,7 @@ const state: AppState = {
   isLoggedIn: false,
   isAdmin: false,
   selectedWorkerId: '',
-  activeTab: 'write',
+  activeTab: 'home',
   filterWorkerId: 'ALL',
   filterLogCategory: 'ALL',
   logViewMode: 'LIST',
@@ -127,6 +128,7 @@ const state: AppState = {
   selectedCalendarDate: '',
   planPeriodType: 'DAILY',
   planBaseDate: new Date().toISOString().slice(0, 10),
+  homePlanMode: 'ALL',
   leaveFilter: 'ALL',
   handoverFolderMode: 'SHIFT',
   handoverFilter: 'ALL',
@@ -161,6 +163,10 @@ let hasInitializedToolReturnAlerts = false;
 const knownToolReturnAlertIds = new Set<string>();
 
 let currentUploadedPhoto = '';
+let currentUploadedMediaType: '' | 'image' | 'video' = '';
+let writeNextAction: 'logs' | 'stay' = 'logs';
+let mediaCompressionCancelled = false;
+let activeMediaRecorder: MediaRecorder | null = null;
 let currentPurchaseItemPhoto = '';
 let currentPurchaseReceiptPhoto = '';
 let currentStaffHandoverAttachment: { name: string; isImage: boolean; dataUrl: string } | null = null;
@@ -191,22 +197,54 @@ function getSelectedWorker() {
   return state.staff.find(s => s.id === state.selectedWorkerId) || null;
 }
 
+let lastKnownToday = getTodayString();
+
+function checkDayRollover() {
+  const today = getTodayString();
+  if (today !== lastKnownToday) {
+    lastKnownToday = today;
+    ['logDate', 'bannerDate', 'newPlanDate', 'leaveStartDate', 'leaveEndDate', 'purchaseDate', 'shDate', 'fdReplaceDate'].forEach(id => {
+      const el = document.getElementById(id) as HTMLInputElement | null;
+      if (el) el.value = today;
+    });
+    state.planBaseDate = today;
+    renderLogs();
+    renderPlans();
+    renderHomePortal();
+  }
+}
+
 const initApp = async () => {
   const today = getTodayString();
+  lastKnownToday = today;
   ['logDate', 'bannerDate', 'newPlanDate', 'leaveStartDate', 'leaveEndDate', 'purchaseDate', 'shDate', 'fdReplaceDate'].forEach(id => {
     const el = document.getElementById(id) as HTMLInputElement | null;
     if (el) el.value = today;
   });
 
-  if (sessionStorage.getItem('horyeoul7_logged_in') === 'true') {
+  const autoLogin = localStorage.getItem('horyeoul7_auto_login') === 'true';
+  if (sessionStorage.getItem('horyeoul7_logged_in') === 'true' || autoLogin) {
     state.isLoggedIn = true;
     document.getElementById('loginScreen')?.classList.add('hidden');
   }
+  const rememberEl = document.getElementById('loginRememberMe') as HTMLInputElement | null;
+  if (rememberEl) rememberEl.checked = autoLogin;
+
   const savedWorker = localStorage.getItem('horyeoul7_worker');
   if (savedWorker) state.selectedWorkerId = savedWorker;
+  renderLoginWorkerSelect();
 
   const savedTheme = localStorage.getItem('horyeoul7_theme') || 'teal';
   setAppTheme(savedTheme, true);
+
+  switchTab('home');
+  renderHomePortal();
+
+  window.addEventListener('focus', checkDayRollover);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkDayRollover();
+  });
+  setInterval(checkDayRollover, 60000);
 
   await initCloudSync();
 };
@@ -234,6 +272,7 @@ async function initCloudSync() {
 
     onSnapshot(getColRef('staff'), (snap) => {
       state.staff = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderLoginWorkerSelect();
       renderWorkerDropdown();
       renderWorkerFilterChips();
       renderAdminStaffList();
@@ -244,23 +283,27 @@ async function initCloudSync() {
       state.logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       state.logs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
       renderLogs();
+      renderHomePortal();
     });
 
     onSnapshot(getColRef('plans'), (snap) => {
       state.plans = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderPlans();
+      renderHomePortal();
     });
 
     onSnapshot(getColRef('leaves'), (snap) => {
       state.leaves = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       state.leaves.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
       renderLeaves();
+      renderHomePortal();
     });
 
     onSnapshot(getColRef('handovers'), (snap) => {
       state.handovers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       state.handovers.sort((a, b) => (b.isImportant ? 1 : 0) - (a.isImportant ? 1 : 0) || (b.timestamp || 0) - (a.timestamp || 0));
       renderHandovers();
+      renderHomePortal();
     });
 
     onSnapshot(getColRef('staff_handovers'), (snap) => {
@@ -272,6 +315,7 @@ async function initCloudSync() {
     onSnapshot(getColRef('tools'), (snap) => {
       state.tools = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderTools();
+      renderHomePortal();
     });
 
     onSnapshot(getColRef('tool_return_alerts'), (snap) => {
@@ -293,6 +337,7 @@ async function initCloudSync() {
 
       state.toolReturnAlerts = nextAlerts;
       renderAdminToolAlerts();
+      renderHomePortal();
     });
 
     onSnapshot(getColRef('detector_logs'), (snap) => {
@@ -310,6 +355,7 @@ async function initCloudSync() {
       state.purchases = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       state.purchases.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
       renderPurchases();
+      renderHomePortal();
     });
 
     onSnapshot(getColRef('chats'), (snap) => {
@@ -348,6 +394,7 @@ async function initCloudSync() {
     console.error('Firebase init error:', err);
     if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 shrink-0';
     if (txt) txt.textContent = '오프라인 로컬 모드 (인터넷 연결 확인 필요)';
+    renderLoginWorkerSelect();
     renderWorkerDropdown();
     renderLogs();
     renderPlans();
@@ -356,23 +403,123 @@ async function initCloudSync() {
 }
 
 // AUTH & WORKER SELECTION
+function renderLoginWorkerSelect() {
+  const sel = document.getElementById('loginWorkerSelect') as HTMLSelectElement | null;
+  if (!sel) return;
+  const currentVal = sel.value;
+  const savedWorker = state.selectedWorkerId || localStorage.getItem('horyeoul7_worker') || '';
+
+  if (state.staff.length === 0) {
+    sel.innerHTML = `<option value="__COMMON__">관리자 / 공용 접속 (최초 직원 등록용)</option>`;
+    sel.value = '__COMMON__';
+    handleLoginWorkerChange('__COMMON__');
+    return;
+  }
+
+  const preferred = (currentVal && (currentVal === '__COMMON__' || state.staff.some(s => s.id === currentVal)))
+    ? currentVal
+    : (savedWorker && state.staff.some(s => s.id === savedWorker) ? savedWorker : '');
+
+  const options = [`<option value="">-- 본인 이름을 선택하세요 --</option>`];
+  state.staff.forEach(s => {
+    const selected = s.id === preferred ? 'selected' : '';
+    options.push(`<option value="${s.id}" ${selected}>${escapeHtml(s.name)} (${escapeHtml(s.role)})</option>`);
+  });
+  options.push(`<option value="__COMMON__" ${preferred === '__COMMON__' ? 'selected' : ''}>관리자 / 공용 접속 (이름 나중에 선택)</option>`);
+  sel.innerHTML = options.join('');
+  handleLoginWorkerChange(sel.value);
+}
+
+function handleLoginWorkerChange(workerId: string) {
+  const hint = document.getElementById('loginWorkerHint');
+  if (!hint) return;
+  if (workerId === '__COMMON__') {
+    hint.textContent = state.staff.length === 0
+      ? '등록된 직원이 없습니다. 공용 비밀번호로 접속 후 관리자 모드에서 직원을 등록해 주세요.'
+      : '공용 비밀번호로 접속 후 상단에서 작업자를 선택할 수 있습니다.';
+    return;
+  }
+  const staffMember = state.staff.find(s => s.id === workerId);
+  if (staffMember) {
+    hint.textContent = staffMember.pin
+      ? `${staffMember.name} (${staffMember.role})님의 개인 비밀번호를 입력하세요.`
+      : `${staffMember.name} (${staffMember.role})님 선택됨 · 공용 비밀번호를 입력하세요.`;
+  } else {
+    hint.textContent = '등록된 직원 이름을 선택 후 비밀번호를 입력하세요.';
+  }
+}
+
 function handleLogin(e: Event) {
   e.preventDefault();
-  const id = (document.getElementById('loginId') as HTMLInputElement).value.trim();
-  const pw = (document.getElementById('loginPw') as HTMLInputElement).value.trim();
-  if (id === 'horyeoul7' && (pw === '1234' || pw === '3927')) {
-    state.isLoggedIn = true;
-    sessionStorage.setItem('horyeoul7_logged_in', 'true');
-    document.getElementById('loginScreen')?.classList.add('hidden');
-    showToast('호려울마을 7단지 공동 작업일지에 로그인되었습니다.', 'success');
-  } else {
-    showToast('아이디 또는 비밀번호가 일치하지 않습니다.', 'error');
+  const sel = document.getElementById('loginWorkerSelect') as HTMLSelectElement | null;
+  const pwInput = document.getElementById('loginPw') as HTMLInputElement | null;
+  const rememberInput = document.getElementById('loginRememberMe') as HTMLInputElement | null;
+
+  const workerId = sel ? sel.value : '__COMMON__';
+  const pw = pwInput ? pwInput.value.trim() : '';
+  const remember = Boolean(rememberInput?.checked);
+
+  if (state.staff.length > 0 && !workerId) {
+    showToast('로그인할 본인 이름을 먼저 선택해 주세요.', 'error');
+    sel?.focus();
+    return;
   }
+
+  const selectedStaff = (workerId && workerId !== '__COMMON__')
+    ? state.staff.find(s => s.id === workerId)
+    : null;
+
+  const isValidPw = selectedStaff && selectedStaff.pin
+    ? (pw === String(selectedStaff.pin).trim() || pw === '3927')
+    : (pw === '1234' || pw === '3927');
+
+  if (!isValidPw) {
+    showToast(
+      selectedStaff && selectedStaff.pin
+        ? '선택한 직원의 개인 비밀번호가 일치하지 않습니다.'
+        : '비밀번호가 일치하지 않습니다.',
+      'error'
+    );
+    return;
+  }
+
+  state.isLoggedIn = true;
+  sessionStorage.setItem('horyeoul7_logged_in', 'true');
+  if (remember) {
+    localStorage.setItem('horyeoul7_auto_login', 'true');
+  } else {
+    localStorage.removeItem('horyeoul7_auto_login');
+  }
+
+  if (selectedStaff) {
+    handleWorkerChange(selectedStaff.id);
+    renderWorkerDropdown();
+  } else {
+    state.selectedWorkerId = '';
+    localStorage.removeItem('horyeoul7_worker');
+    renderWorkerDropdown();
+  }
+
+  if (pwInput) pwInput.value = '';
+  document.getElementById('loginScreen')?.classList.add('hidden');
+  switchTab('home');
+  showToast(
+    selectedStaff
+      ? `${selectedStaff.name} (${selectedStaff.role})님으로 로그인되었습니다.`
+      : '관리자 / 공용 접속으로 로그인되었습니다.',
+    'success'
+  );
 }
 
 function handleLogout() {
   state.isLoggedIn = false;
   sessionStorage.removeItem('horyeoul7_logged_in');
+  localStorage.removeItem('horyeoul7_auto_login');
+  const pwInput = document.getElementById('loginPw') as HTMLInputElement | null;
+  if (pwInput) pwInput.value = '';
+  const rememberInput = document.getElementById('loginRememberMe') as HTMLInputElement | null;
+  if (rememberInput) rememberInput.checked = false;
+  renderLoginWorkerSelect();
   document.getElementById('loginScreen')?.classList.remove('hidden');
   showToast('로그아웃 되었습니다.', 'info');
 }
@@ -425,22 +572,51 @@ function updateWorkerBanner() {
   }
 }
 
-// NAVIGATION TABS
+// NAVIGATION TABS & HOME PORTAL (홈)
 function switchTab(tabId: string) {
   state.activeTab = tabId;
-  const tabs = ['write', 'logs', 'plans', 'leave', 'chat', 'handover', 'tools', 'vendors', 'purchases', 'admin'];
-  tabs.forEach(t => {
+  checkDayRollover();
+  const allSections = ['home', 'write', 'logs', 'plans', 'leave', 'chat', 'handover', 'tools', 'vendors', 'purchases', 'admin'];
+  allSections.forEach(t => {
     const sec = document.getElementById(`tab-${t}`);
-    const btn = document.getElementById(`nav-${t}`);
     if (t === tabId) {
       sec?.classList.remove('hidden');
-      if (btn) btn.className = 'relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl bg-brand-600 text-white flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-bold shadow-sm transition-all duration-200';
     } else {
       sec?.classList.add('hidden');
-      if (btn) btn.className = 'relative min-w-0 py-1.5 md:py-2 px-1 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 flex flex-col lg:flex-row items-center justify-center gap-0.5 lg:gap-1 font-semibold transition-all duration-200';
     }
   });
+
+  const quickBar = document.getElementById('quickTabBar');
+  if (quickBar) {
+    quickBar.classList.toggle('hidden', tabId === 'home');
+  }
+  allSections.forEach(t => {
+    const qBtn = document.getElementById(`quickNav-${t}`);
+    if (!qBtn) return;
+    if (t === tabId) {
+      qBtn.className = 'relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white text-brand-700 font-extrabold shadow-xs transition flex items-center gap-1 whitespace-nowrap';
+      if (tabId !== 'home') {
+        requestAnimationFrame(() => {
+          qBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        });
+      }
+    } else {
+      qBtn.className = t === 'home'
+        ? 'relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold transition flex items-center gap-1 whitespace-nowrap'
+        : 'relative shrink-0 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/25 text-white/90 font-semibold transition flex items-center gap-1 whitespace-nowrap';
+    }
+  });
+
+  const homeBtn = document.getElementById('headerHomeBtn');
+  if (homeBtn) {
+    homeBtn.className = tabId === 'home'
+      ? 'px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-extrabold rounded-xl bg-white text-brand-700 border border-white shadow-xs flex items-center gap-1.5 transition whitespace-nowrap'
+      : 'px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-bold rounded-xl bg-white/20 hover:bg-white/30 text-white border border-white/25 flex items-center gap-1.5 transition whitespace-nowrap';
+  }
+  window.scrollTo({ top: 0 });
+
   if (tabId !== 'write') stopVoiceInput();
+  if (tabId === 'home') renderHomePortal();
   if (tabId === 'logs') renderLogs();
   if (tabId === 'plans') renderPlans();
   if (tabId === 'leave') renderLeaves();
@@ -455,6 +631,193 @@ function switchTab(tabId: string) {
     const latest = state.chats[state.chats.length - 1];
     if (latest) state.lastSeenChatTimestamp = latest.timestamp || Date.now();
     renderChats();
+  }
+}
+
+function setHomePlanMode(mode: string) {
+  state.homePlanMode = mode;
+  const activeStyles: Record<string, string> = {
+    ALL: 'bg-navy-800 text-white',
+    DAILY: 'bg-brand-600 text-white',
+    WEEKLY: 'bg-indigo-600 text-white',
+    MONTHLY: 'bg-teal-600 text-white'
+  };
+  ['ALL', 'DAILY', 'WEEKLY', 'MONTHLY'].forEach(k => {
+    const btn = document.getElementById(`homePlanTab-${k}`);
+    const cnt = document.getElementById(`homePlanCount-${k}`);
+    if (btn) {
+      btn.className = k === mode
+        ? `py-1.5 px-1.5 rounded-lg ${activeStyles[k] || 'bg-navy-800 text-white'} font-bold transition flex items-center justify-center gap-1 whitespace-nowrap`
+        : 'py-1.5 px-1.5 rounded-lg text-slate-600 hover:text-slate-900 font-semibold transition flex items-center justify-center gap-1 whitespace-nowrap';
+    }
+    if (cnt) {
+      cnt.className = k === mode
+        ? 'px-1.5 rounded-full bg-white/25 text-white text-[10px]'
+        : 'px-1.5 rounded-full bg-slate-200 text-slate-700 text-[10px]';
+    }
+  });
+  renderHomePortal();
+}
+
+function renderHomePortal() {
+  const todayStr = getTodayString();
+  const d = new Date(todayStr + 'T00:00:00');
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  const dateLabelEl = document.getElementById('homeTodayDateText');
+  if (dateLabelEl) {
+    dateLabelEl.textContent = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${weekdays[d.getDay()]})`;
+  }
+
+  // Update 10-card live indicators
+  const todayLogsCount = state.logs.filter(l => l.date === todayStr).length;
+  const logsBadge = document.getElementById('homeBadge-logs');
+  if (logsBadge) {
+    logsBadge.textContent = String(todayLogsCount);
+    logsBadge.classList.toggle('hidden', todayLogsCount === 0);
+  }
+
+  const weekRange = getWeekRange(todayStr);
+  const ym = todayStr.slice(0, 7);
+  const dailyPlans = state.plans.filter(p => p.type === 'DAILY' && p.date === todayStr);
+  const weeklyPlans = state.plans.filter(p => p.type === 'WEEKLY' && p.date >= weekRange.start && p.date <= weekRange.end);
+  const monthlyPlans = state.plans.filter(p => p.type === 'MONTHLY' && (p.date || '').startsWith(ym));
+  const allHomePlans = [...dailyPlans, ...weeklyPlans, ...monthlyPlans];
+  const pendingPlansCount = allHomePlans.filter(p => !p.done).length;
+
+  const plansBadge = document.getElementById('homeBadge-plans');
+  if (plansBadge) {
+    plansBadge.textContent = String(pendingPlansCount);
+    plansBadge.classList.toggle('hidden', pendingPlansCount === 0);
+  }
+
+  const hasTodayLeave = state.leaves.some(l => l.startDate <= todayStr && (l.endDate || l.startDate) >= todayStr);
+  document.getElementById('homeDot-leave')?.classList.toggle('hidden', !hasTodayLeave);
+  document.getElementById('qDot-leave')?.classList.toggle('hidden', !hasTodayLeave);
+
+  const hasUnconfirmedHo = state.handovers.some(h => !h.confirmedBy);
+  document.getElementById('homeDot-handover')?.classList.toggle('hidden', !hasUnconfirmedHo);
+  document.getElementById('qDot-handover')?.classList.toggle('hidden', !hasUnconfirmedHo);
+
+  const hasToolAlert = state.tools.some(t => t.status === 'RENTED' || isToolLowStock(t));
+  document.getElementById('homeDot-tools')?.classList.toggle('hidden', !hasToolAlert);
+  document.getElementById('qDot-tools')?.classList.toggle('hidden', !hasToolAlert);
+
+  const hasUnverifiedPur = state.purchases.some(p => !p.verifiedBy);
+  document.getElementById('homeDot-purchases')?.classList.toggle('hidden', !hasUnverifiedPur);
+  document.getElementById('qDot-purchases')?.classList.toggle('hidden', !hasUnverifiedPur);
+
+  const hasUnreadAdminAlert = state.toolReturnAlerts.some(a => !a.readByAdmin);
+  document.getElementById('homeDot-admin')?.classList.toggle('hidden', !hasUnreadAdminAlert);
+  document.getElementById('qDot-admin')?.classList.toggle('hidden', !hasUnreadAdminAlert);
+
+  // Render Notices & Important Handovers on Home
+  const noticeBox = document.getElementById('homeNoticeList');
+  if (noticeBox) {
+    const sortedNotices = [...state.handovers].sort((a, b) => {
+      const aScore = (a.isImportant ? 2 : 0) + (a.type === '전체공지' ? 1 : 0);
+      const bScore = (b.isImportant ? 2 : 0) + (b.type === '전체공지' ? 1 : 0);
+      return bScore - aScore || (b.timestamp || 0) - (a.timestamp || 0);
+    }).slice(0, 5);
+
+    if (sortedNotices.length === 0) {
+      noticeBox.innerHTML = `
+        <div class="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-5 text-center space-y-2">
+          <p class="text-xs text-slate-400">등록된 공지사항 · 인수인계가 없습니다.</p>
+          <button type="button" onclick="switchTab('handover')" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-[11px] font-bold text-slate-700 transition">공지·인수인계 작성하기</button>
+        </div>
+      `;
+    } else {
+      noticeBox.innerHTML = sortedNotices.map(h => {
+        const isNotice = h.type === '전체공지';
+        const badgeHtml = isNotice
+          ? `<span class="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 text-[10px] font-extrabold">📢 전체공지</span>`
+          : `<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-extrabold">${escapeHtml(h.type || '인수인계')}</span>`;
+        const pinHtml = h.isImportant
+          ? `<span class="px-1.5 py-0.5 rounded bg-red-600 text-white text-[9px] font-extrabold">📌 중요</span>`
+          : '';
+        return `
+          <div class="p-2.5 rounded-xl border ${h.isImportant ? 'bg-amber-50/70 border-amber-200' : 'bg-slate-50 border-slate-200'} space-y-1">
+            <div class="flex items-center justify-between gap-1.5 flex-wrap">
+              <div class="flex items-center gap-1 flex-wrap">${pinHtml}${badgeHtml}</div>
+              <span class="text-[10px] text-slate-400">${escapeHtml(h.createdAt || '')}</span>
+            </div>
+            <p class="text-xs text-slate-800 font-medium leading-relaxed line-clamp-2 whitespace-pre-line">${escapeHtml(h.content)}</p>
+            <div class="flex items-center justify-between text-[10px] text-slate-500">
+              <span>작성: <strong>${escapeHtml(h.authorName || '-')}</strong></span>
+              ${h.confirmedBy
+                ? `<span class="text-emerald-700 font-bold">✔ 확인 (${escapeHtml(h.confirmedBy)})</span>`
+                : `<span class="text-amber-700 font-bold">미확인</span>`
+              }
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // Render Daily / Weekly / Monthly Plans on Home
+  const countMap: Record<string, number> = {
+    ALL: allHomePlans.length,
+    DAILY: dailyPlans.length,
+    WEEKLY: weeklyPlans.length,
+    MONTHLY: monthlyPlans.length
+  };
+  ['ALL', 'DAILY', 'WEEKLY', 'MONTHLY'].forEach(k => {
+    const el = document.getElementById(`homePlanCount-${k}`);
+    if (el) el.textContent = String(countMap[k] || 0);
+  });
+
+  const planBox = document.getElementById('homePlanList');
+  if (planBox) {
+    const targetList = state.homePlanMode === 'DAILY'
+      ? dailyPlans
+      : state.homePlanMode === 'WEEKLY'
+        ? weeklyPlans
+        : state.homePlanMode === 'MONTHLY'
+          ? monthlyPlans
+          : allHomePlans;
+
+    if (targetList.length === 0) {
+      const modeNames: Record<string, string> = {
+        ALL: '오늘·이번 주·이번 달',
+        DAILY: '오늘 일일',
+        WEEKLY: '이번 주 주간',
+        MONTHLY: '이번 달 월간'
+      };
+      planBox.innerHTML = `
+        <div class="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-6 text-center space-y-2">
+          <p class="text-xs text-slate-400">${modeNames[state.homePlanMode] || ''} 등록된 업무계획이 없습니다.</p>
+          <button type="button" onclick="switchTab('plans')" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-[11px] font-bold text-indigo-700 transition">업무계획 등록하기</button>
+        </div>
+      `;
+    } else {
+      planBox.innerHTML = targetList.map(p => {
+        const typeBadge = p.type === 'DAILY'
+          ? `<span class="px-1.5 py-0.5 rounded bg-brand-100 text-brand-800 text-[10px] font-extrabold">일일</span>`
+          : p.type === 'WEEKLY'
+            ? `<span class="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[10px] font-extrabold">주간</span>`
+            : `<span class="px-1.5 py-0.5 rounded bg-teal-100 text-teal-800 text-[10px] font-extrabold">월간</span>`;
+        return `
+          <div class="flex items-start justify-between gap-2 p-2.5 rounded-xl border ${p.done ? 'bg-slate-50 border-slate-200 opacity-75' : 'bg-white border-slate-200'} transition">
+            <div class="flex items-start gap-2 min-w-0">
+              <input type="checkbox" ${p.done ? 'checked' : ''} onchange="togglePlanDone('${p.id}')" class="mt-0.5 w-4 h-4 text-brand-600 rounded cursor-pointer shrink-0">
+              <div class="min-w-0 space-y-0.5">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  ${typeBadge}
+                  <span class="text-[10px] font-bold text-slate-500">${escapeHtml(p.date)}</span>
+                  <span class="text-[10px] font-semibold text-slate-500">· 담당: ${escapeHtml(p.assignee || '공통')}</span>
+                </div>
+                <p class="text-xs font-bold ${p.done ? 'line-through text-slate-400' : 'text-slate-800'}">${escapeHtml(p.title)}</p>
+                ${p.location ? `<span class="text-[10px] text-brand-700 font-semibold block"><i class="fa-solid fa-location-dot mr-0.5"></i>${escapeHtml(p.location)}</span>` : ''}
+              </div>
+            </div>
+            <button type="button" onclick="sendPlanToWorkLog('${p.id}')" title="일지작성으로 옮기기" class="shrink-0 px-2 py-1 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-[10px] font-bold transition whitespace-nowrap">
+              일지로 <i class="fa-solid fa-arrow-right ml-0.5"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
   }
 }
 
@@ -557,12 +920,19 @@ function renderAdminBannerList() {
 // WORK LOG WRITE & PHOTO & SUBMIT
 function selectLogCategory(cat: string) {
   (document.getElementById('logCategory') as HTMLInputElement).value = cat;
-  ['공용민원', '세대민원', '정기점검'].forEach(c => {
+  const activeColors: Record<string, string> = {
+    '공용민원': 'bg-brand-600 text-white',
+    '세대민원': 'bg-amber-600 text-white',
+    '세대민원(긴급)': 'bg-rose-600 text-white',
+    '정기점검': 'bg-indigo-600 text-white',
+    '하자보수': 'bg-violet-600 text-white'
+  };
+  ['공용민원', '세대민원', '세대민원(긴급)', '정기점검', '하자보수'].forEach(c => {
     const btn = document.getElementById(`logCatBtn-${c}`);
     if (!btn) return;
     btn.className = c === cat
-      ? 'py-2.5 px-2 rounded-xl bg-brand-600 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1'
-      : 'py-2.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1';
+      ? `py-2.5 px-2 rounded-xl ${activeColors[c] || 'bg-brand-600 text-white'} font-bold text-xs shadow-xs transition flex items-center justify-center gap-1 whitespace-nowrap`
+      : 'py-2.5 px-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1 whitespace-nowrap';
   });
 }
 
@@ -571,39 +941,519 @@ function setQuickLocation(loc: string) {
   if (el) el.value = loc;
 }
 
-function handlePhotoUpload(e: Event) {
+function formatBytes(bytes: number): string {
+  if (!bytes || bytes <= 0) return '0KB';
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+function estimateDataUrlBytes(dataUrl: string): number {
+  const commaIdx = dataUrl.indexOf(',');
+  const b64Len = commaIdx >= 0 ? dataUrl.length - commaIdx - 1 : dataUrl.length;
+  return Math.round((b64Len * 3) / 4);
+}
+
+function isVideoMediaSrc(src: string, mediaType?: string): boolean {
+  if (mediaType === 'video') return true;
+  if (!src) return false;
+  return src.startsWith('data:video/');
+}
+
+interface OptimizedImageResult {
+  dataUrl: string;
+  width: number;
+  height: number;
+  originalWidth: number;
+  originalHeight: number;
+  originalBytes: number;
+  optimizedBytes: number;
+  savedPercent: number;
+}
+
+async function decodeImageSourceForCanvas(file: File): Promise<{
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+  cleanup: () => void;
+}> {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+      return {
+        source: bitmap,
+        width: bitmap.width,
+        height: bitmap.height,
+        cleanup: () => bitmap.close()
+      };
+    } catch {
+      try {
+        const bitmap = await createImageBitmap(file);
+        return {
+          source: bitmap,
+          width: bitmap.width,
+          height: bitmap.height,
+          cleanup: () => bitmap.close()
+        };
+      } catch {
+        // Fallback to HTMLImageElement below
+      }
+    }
+  }
+
+  return await new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      resolve({
+        source: img,
+        width: img.naturalWidth || img.width,
+        height: img.naturalHeight || img.height,
+        cleanup: () => URL.revokeObjectURL(objectUrl)
+      });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('이미지를 디코딩할 수 없습니다.'));
+    };
+    img.src = objectUrl;
+  });
+}
+
+async function optimizeImageFile(
+  file: File,
+  options?: {
+    scale?: number;
+    maxDimension?: number;
+    minDimension?: number;
+    maxTargetBytes?: number;
+    initialQuality?: number;
+  }
+): Promise<OptimizedImageResult> {
+  const scale = options?.scale ?? 0.5;
+  const maxDim = options?.maxDimension ?? 1200;
+  const minDim = options?.minDimension ?? 240;
+  const maxTargetBytes = options?.maxTargetBytes ?? 420 * 1024;
+  const initialQuality = options?.initialQuality ?? 0.72;
+
+  const decoded = await decodeImageSourceForCanvas(file);
+  try {
+    const origW = Math.max(1, decoded.width);
+    const origH = Math.max(1, decoded.height);
+
+    // 50% resizing (preserve tiny thumbnails above minDim)
+    let w = (origW <= minDim && origH <= minDim) ? origW : Math.max(1, Math.round(origW * scale));
+    let h = (origW <= minDim && origH <= minDim) ? origH : Math.max(1, Math.round(origH * scale));
+
+    if (w > maxDim || h > maxDim) {
+      if (w >= h) {
+        h = Math.max(1, Math.round((h * maxDim) / w));
+        w = maxDim;
+      } else {
+        w = Math.max(1, Math.round((w * maxDim) / h));
+        h = maxDim;
+      }
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D 컨텍스트를 생성할 수 없습니다.');
+
+    // Drawing onto fresh Canvas & re-encoding JPEG strips all EXIF metadata (GPS, device info, timestamps)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(decoded.source, 0, 0, w, h);
+
+    const qualities = [initialQuality, 0.62, 0.52, 0.42];
+    let dataUrl = canvas.toDataURL('image/jpeg', qualities[0]);
+    for (let i = 1; i < qualities.length; i++) {
+      if (estimateDataUrlBytes(dataUrl) <= maxTargetBytes) break;
+      dataUrl = canvas.toDataURL('image/jpeg', qualities[i]);
+    }
+
+    // If still larger than target, shrink one more step by 75%
+    if (estimateDataUrlBytes(dataUrl) > maxTargetBytes && (w > 480 || h > 480)) {
+      const cw = Math.max(1, Math.round(w * 0.75));
+      const ch = Math.max(1, Math.round(h * 0.75));
+      const smallCanvas = document.createElement('canvas');
+      smallCanvas.width = cw;
+      smallCanvas.height = ch;
+      const sCtx = smallCanvas.getContext('2d');
+      if (sCtx) {
+        sCtx.fillStyle = '#ffffff';
+        sCtx.fillRect(0, 0, cw, ch);
+        sCtx.imageSmoothingEnabled = true;
+        sCtx.imageSmoothingQuality = 'high';
+        sCtx.drawImage(canvas, 0, 0, cw, ch);
+        dataUrl = smallCanvas.toDataURL('image/jpeg', 0.52);
+        w = cw;
+        h = ch;
+      }
+    }
+
+    const optimizedBytes = estimateDataUrlBytes(dataUrl);
+    const savedPercent = file.size > 0 ? Math.max(0, Math.round((1 - optimizedBytes / file.size) * 100)) : 0;
+
+    return {
+      dataUrl,
+      width: w,
+      height: h,
+      originalWidth: origW,
+      originalHeight: origH,
+      originalBytes: file.size,
+      optimizedBytes,
+      savedPercent
+    };
+  } finally {
+    decoded.cleanup();
+  }
+}
+
+function getSupportedVideoMimeType(): string {
+  if (typeof MediaRecorder === 'undefined') return '';
+  const candidates = [
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm',
+    'video/mp4'
+  ];
+  for (const mime of candidates) {
+    try {
+      if (MediaRecorder.isTypeSupported(mime)) return mime;
+    } catch {
+      // ignore
+    }
+  }
+  return '';
+}
+
+function readBlobAsDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('파일을 Data URL로 변환하지 못했습니다.'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function runVideoCompressionPass(
+  file: File,
+  passOptions: { maxDim: number; maxDurationSec: number; bitrate: number; fps: number },
+  onProgress?: (pct: number, message: string) => void
+): Promise<{ dataUrl: string; width: number; height: number; durationSec: number; optimizedBytes: number }> {
+  const objectUrl = URL.createObjectURL(file);
+  const video = document.createElement('video');
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = 'auto';
+  video.src = objectUrl;
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const timer = window.setTimeout(() => reject(new Error('동영상 메타데이터 로딩 시간 초과')), 12000);
+      video.onloadedmetadata = () => {
+        window.clearTimeout(timer);
+        resolve();
+      };
+      video.onerror = () => {
+        window.clearTimeout(timer);
+        reject(new Error('지원하지 않는 동영상 형식입니다.'));
+      };
+    });
+
+    const rawW = Math.max(2, video.videoWidth || 640);
+    const rawH = Math.max(2, video.videoHeight || 360);
+    // 50% scale capped at maxDim, rounded to even numbers for encoder compatibility
+    let targetW = Math.round(rawW * 0.5);
+    let targetH = Math.round(rawH * 0.5);
+    if (targetW > passOptions.maxDim || targetH > passOptions.maxDim) {
+      if (targetW >= targetH) {
+        targetH = Math.round((targetH * passOptions.maxDim) / targetW);
+        targetW = passOptions.maxDim;
+      } else {
+        targetW = Math.round((targetW * passOptions.maxDim) / targetH);
+        targetH = passOptions.maxDim;
+      }
+    }
+    targetW = Math.max(160, targetW & ~1);
+    targetH = Math.max(120, targetH & ~1);
+
+    const rawDuration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 5;
+    const clipDuration = Math.min(rawDuration, passOptions.maxDurationSec);
+    const dynamicBitrate = Math.min(
+      passOptions.bitrate,
+      Math.max(95_000, Math.floor((440_000 * 8) / Math.max(clipDuration, 2)))
+    );
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetW;
+    canvas.height = targetH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('동영상 압축용 캔버스를 생성할 수 없습니다.');
+
+    const mimeType = getSupportedVideoMimeType();
+    if (!mimeType || typeof canvas.captureStream !== 'function') {
+      throw new Error('이 브라우저에서는 동영상 자동 압축(MediaRecorder)을 지원하지 않습니다.');
+    }
+
+    const stream = canvas.captureStream(passOptions.fps);
+    const recorder = new MediaRecorder(stream, {
+      mimeType,
+      videoBitsPerSecond: dynamicBitrate
+    });
+    activeMediaRecorder = recorder;
+
+    const chunks: BlobPart[] = [];
+    recorder.ondataavailable = (ev) => {
+      if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+    };
+
+    const recordingPromise = new Promise<Blob>((resolve, reject) => {
+      recorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (mediaCompressionCancelled) {
+          reject(new Error('CANCELLED'));
+          return;
+        }
+        resolve(new Blob(chunks, { type: mimeType.split(';')[0] || 'video/webm' }));
+      };
+      recorder.onerror = () => {
+        stream.getTracks().forEach(t => t.stop());
+        reject(new Error('동영상 인코딩 중 오류가 발생했습니다.'));
+      };
+    });
+
+    video.currentTime = 0;
+    recorder.start(250);
+    await video.play();
+
+    let stopped = false;
+    const stopAll = () => {
+      if (stopped) return;
+      stopped = true;
+      try { video.pause(); } catch { /* ignore */ }
+      if (recorder.state !== 'inactive') {
+        try { recorder.stop(); } catch { /* ignore */ }
+      }
+    };
+
+    const drawLoop = () => {
+      if (mediaCompressionCancelled) {
+        stopAll();
+        return;
+      }
+      ctx.drawImage(video, 0, 0, targetW, targetH);
+      const pct = Math.min(99, Math.round((video.currentTime / Math.max(clipDuration, 0.5)) * 100));
+      onProgress?.(pct, `동영상 자동 압축 중... ${pct}% (${targetW}×${targetH})`);
+      if (video.ended || video.currentTime >= clipDuration) {
+        stopAll();
+        return;
+      }
+      requestAnimationFrame(drawLoop);
+    };
+    requestAnimationFrame(drawLoop);
+
+    const guardTimer = window.setTimeout(stopAll, Math.ceil((clipDuration + 1.5) * 1000));
+    const blob = await recordingPromise;
+    window.clearTimeout(guardTimer);
+
+    const dataUrl = await readBlobAsDataUrl(blob);
+    return {
+      dataUrl,
+      width: targetW,
+      height: targetH,
+      durationSec: clipDuration,
+      optimizedBytes: blob.size
+    };
+  } finally {
+    activeMediaRecorder = null;
+    try { video.pause(); } catch { /* ignore */ }
+    video.removeAttribute('src');
+    video.load();
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+async function compressVideoFile(
+  file: File,
+  onProgress?: (pct: number, message: string) => void
+): Promise<{
+  dataUrl: string;
+  width: number;
+  height: number;
+  originalBytes: number;
+  optimizedBytes: number;
+  savedPercent: number;
+  trimmed: boolean;
+}> {
+  mediaCompressionCancelled = false;
+  let result: { dataUrl: string; width: number; height: number; durationSec: number; optimizedBytes: number };
+
+  try {
+    result = await runVideoCompressionPass(
+      file,
+      { maxDim: 480, maxDurationSec: 12, bitrate: 320_000, fps: 15 },
+      onProgress
+    );
+
+    // If compressed dataUrl is still too large for Firestore 1MB doc limit, try a tighter compact pass
+    if (result.dataUrl.length > 760_000 && !mediaCompressionCancelled) {
+      onProgress?.(10, '클라우드 용량에 맞춰 추가 압축 중...');
+      result = await runVideoCompressionPass(
+        file,
+        { maxDim: 320, maxDurationSec: 8, bitrate: 140_000, fps: 12 },
+        onProgress
+      );
+    }
+  } catch (err: any) {
+    if (err?.message === 'CANCELLED') throw err;
+    // Fallback if MediaRecorder unsupported AND file is already very small (<520KB)
+    if (file.size <= 520 * 1024) {
+      const rawDataUrl = await readBlobAsDataUrl(file);
+      return {
+        dataUrl: rawDataUrl,
+        width: 0,
+        height: 0,
+        originalBytes: file.size,
+        optimizedBytes: file.size,
+        savedPercent: 0,
+        trimmed: false
+      };
+    }
+    throw err;
+  }
+
+  if (result.dataUrl.length > 840_000) {
+    throw new Error('동영상 용량이 커서 클라우드 저장 한도(약 600KB)를 초과합니다. 10초 이내의 짧은 영상을 사용해 주세요.');
+  }
+
+  const savedPercent = file.size > 0 ? Math.max(0, Math.round((1 - result.optimizedBytes / file.size) * 100)) : 0;
+  return {
+    dataUrl: result.dataUrl,
+    width: result.width,
+    height: result.height,
+    originalBytes: file.size,
+    optimizedBytes: result.optimizedBytes,
+    savedPercent,
+    trimmed: result.durationSec >= 11.9
+  };
+}
+
+function cancelMediaCompression() {
+  mediaCompressionCancelled = true;
+  if (activeMediaRecorder && activeMediaRecorder.state !== 'inactive') {
+    try { activeMediaRecorder.stop(); } catch { /* ignore */ }
+  }
+  document.getElementById('logMediaProgressBox')?.classList.add('hidden');
+  const inp = document.getElementById('logPhotoInput') as HTMLInputElement | null;
+  if (inp) inp.value = '';
+  showToast('미디어 압축이 취소되었습니다.', 'info');
+}
+
+async function handlePhotoUpload(e: Event) {
   const input = e.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const maxDim = 800;
-      let w = img.width;
-      let h = img.height;
-      if (w > maxDim || h > maxDim) {
-        if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
-        else { w = Math.round((w * maxDim) / h); h = maxDim; }
+
+  const isVideo = file.type.startsWith('video/') || /\.(mp4|mov|webm|m4v|3gp|avi)$/i.test(file.name);
+  const progressBox = document.getElementById('logMediaProgressBox');
+  const progressBar = document.getElementById('logMediaProgressBar');
+  const progressText = document.getElementById('logMediaProgressText');
+  const previewBox = document.getElementById('photoPreviewBox');
+  const imgEl = document.getElementById('photoPreviewImg') as HTMLImageElement | null;
+  const videoEl = document.getElementById('photoPreviewVideo') as HTMLVideoElement | null;
+  const captionTag = document.getElementById('photoCaptionTag');
+
+  if (isVideo) {
+    progressBox?.classList.remove('hidden');
+    if (progressBar) progressBar.style.width = '8%';
+    if (progressText) progressText.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i>동영상 분석 및 자동 압축 준비 중...`;
+
+    try {
+      const compressed = await compressVideoFile(file, (pct, msg) => {
+        if (progressBar) progressBar.style.width = `${Math.max(8, pct)}%`;
+        if (progressText) progressText.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i>${escapeHtml(msg)}`;
+      });
+
+      progressBox?.classList.add('hidden');
+      currentUploadedPhoto = compressed.dataUrl;
+      currentUploadedMediaType = 'video';
+
+      if (imgEl) { imgEl.classList.add('hidden'); imgEl.src = ''; }
+      if (videoEl) {
+        videoEl.src = compressed.dataUrl;
+        videoEl.classList.remove('hidden');
       }
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
-      currentUploadedPhoto = canvas.toDataURL('image/jpeg', 0.65);
-      (document.getElementById('photoPreviewImg') as HTMLImageElement).src = currentUploadedPhoto;
-      document.getElementById('photoPreviewBox')?.classList.remove('hidden');
-      showToast('작업 사진이 첨부되었습니다.', 'success');
-    };
-    img.src = ev.target?.result as string;
-  };
-  reader.readAsDataURL(file);
+      if (captionTag) {
+        captionTag.textContent = `🎥 동영상 압축 완료 · ${formatBytes(compressed.originalBytes)} → ${formatBytes(compressed.optimizedBytes)}${compressed.savedPercent > 0 ? ` (-${compressed.savedPercent}%)` : ''}`;
+      }
+      previewBox?.classList.remove('hidden');
+      showToast(
+        compressed.trimmed
+          ? `동영상이 자동 압축되었습니다 (최대 12초 최적화 · ${formatBytes(compressed.optimizedBytes)}).`
+          : `동영상이 자동 압축되었습니다 (${formatBytes(compressed.originalBytes)} → ${formatBytes(compressed.optimizedBytes)}).`,
+        'success'
+      );
+    } catch (err: any) {
+      progressBox?.classList.add('hidden');
+      input.value = '';
+      if (err?.message !== 'CANCELLED') {
+        console.error('Video compression error:', err);
+        showToast(err?.message || '동영상 압축 중 오류가 발생했습니다.', 'error');
+      }
+    }
+    return;
+  }
+
+  // Image EXIF stripping + 50% auto-resizing
+  try {
+    const opt = await optimizeImageFile(file, {
+      scale: 0.5,
+      maxDimension: 1200,
+      maxTargetBytes: 420 * 1024,
+      initialQuality: 0.72
+    });
+    currentUploadedPhoto = opt.dataUrl;
+    currentUploadedMediaType = 'image';
+
+    if (videoEl) {
+      videoEl.pause();
+      videoEl.classList.add('hidden');
+      videoEl.removeAttribute('src');
+    }
+    if (imgEl) {
+      imgEl.src = opt.dataUrl;
+      imgEl.classList.remove('hidden');
+    }
+    if (captionTag) {
+      captionTag.textContent = `EXIF 삭제 · 50% 축소 (${opt.width}×${opt.height} · ${formatBytes(opt.originalBytes)} → ${formatBytes(opt.optimizedBytes)})`;
+    }
+    previewBox?.classList.remove('hidden');
+    showToast(`EXIF 삭제 및 50% 리사이징 완료 (${formatBytes(opt.originalBytes)} → ${formatBytes(opt.optimizedBytes)})`, 'success');
+  } catch (err) {
+    console.error('Photo optimization error:', err);
+    input.value = '';
+    showToast('지원하지 않는 이미지 형식이거나 처리 중 오류가 발생했습니다.', 'error');
+  }
 }
 
 function clearPhoto() {
   currentUploadedPhoto = '';
+  currentUploadedMediaType = '';
   const inp = document.getElementById('logPhotoInput') as HTMLInputElement | null;
   if (inp) inp.value = '';
+  const imgEl = document.getElementById('photoPreviewImg') as HTMLImageElement | null;
+  if (imgEl) { imgEl.src = ''; imgEl.classList.remove('hidden'); }
+  const videoEl = document.getElementById('photoPreviewVideo') as HTMLVideoElement | null;
+  if (videoEl) {
+    videoEl.pause();
+    videoEl.removeAttribute('src');
+    videoEl.classList.add('hidden');
+  }
+  document.getElementById('logMediaProgressBox')?.classList.add('hidden');
   document.getElementById('photoPreviewBox')?.classList.add('hidden');
 }
 
@@ -748,6 +1598,10 @@ function toggleVoiceInput(fieldId: string) {
   }
 }
 
+function setWriteNextAction(action: 'logs' | 'stay') {
+  writeNextAction = action;
+}
+
 async function submitWorkLog(e: Event) {
   e.preventDefault();
   stopVoiceInput();
@@ -780,6 +1634,7 @@ async function submitWorkLog(e: Event) {
     complaintContent,
     content,
     photo: currentUploadedPhoto || '',
+    mediaType: currentUploadedMediaType || (currentUploadedPhoto.startsWith('data:video/') ? 'video' : (currentUploadedPhoto ? 'image' : '')),
     createdAt: timeStr,
     timestamp: Date.now()
   };
@@ -790,10 +1645,31 @@ async function submitWorkLog(e: Event) {
   (document.getElementById('logContent') as HTMLTextAreaElement).value = '';
   clearPhoto();
   renderLogs();
+  renderHomePortal();
 
-  try { await setDoc(getDocRef('logs', id), newLog); } catch (err) { console.error(err); }
-  showToast('작업일지가 등록되었습니다!', 'success');
-  switchTab('logs');
+  const stayOnWrite = writeNextAction === 'stay';
+  writeNextAction = 'logs';
+
+  try {
+    await setDoc(getDocRef('logs', id), newLog);
+    showToast(
+      stayOnWrite ? '작업일지가 등록되었습니다! 이어서 다음 작업을 작성하세요.' : '작업일지가 등록되었습니다!',
+      'success'
+    );
+  } catch (err) {
+    console.error('WorkLog save error:', err);
+    showToast('미디어 용량 한도 초과로 텍스트만 클라우드에 저장됩니다.', 'error');
+    try {
+      await setDoc(getDocRef('logs', id), { ...newLog, photo: '', mediaType: '' });
+    } catch (e2) { console.error(e2); }
+  }
+
+  if (stayOnWrite) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('logLocation')?.focus();
+  } else {
+    switchTab('logs');
+  }
 }
 
 // WORK LOGS LIST, FILTERS & CALENDAR
@@ -803,9 +1679,11 @@ function setLogCategoryFilter(cat: string) {
     ALL: 'bg-navy-800 text-white',
     '공용민원': 'bg-teal-600 text-white',
     '세대민원': 'bg-amber-600 text-white',
-    '정기점검': 'bg-indigo-600 text-white'
+    '세대민원(긴급)': 'bg-rose-600 text-white',
+    '정기점검': 'bg-indigo-600 text-white',
+    '하자보수': 'bg-violet-600 text-white'
   };
-  ['ALL', '공용민원', '세대민원', '정기점검'].forEach(c => {
+  ['ALL', '공용민원', '세대민원', '세대민원(긴급)', '정기점검', '하자보수'].forEach(c => {
     const btn = document.getElementById(`logCatFilter-${c}`);
     const countEl = document.getElementById(`logCatCount-${c}`);
     if (btn) {
@@ -851,17 +1729,33 @@ function setLogViewMode(mode: string) {
   const listBtn = document.getElementById('logViewBtn-LIST');
   const calBtn = document.getElementById('logViewBtn-CALENDAR');
   const calWrap = document.getElementById('logCalendarWrapper');
+  const todayBanner = document.getElementById('logsTodayResetBanner');
 
   if (mode === 'CALENDAR') {
     if (calBtn) calBtn.className = 'py-2 px-2 rounded-lg bg-brand-600 text-white font-extrabold shadow-xs transition flex items-center justify-center gap-1.5';
     if (listBtn) listBtn.className = 'py-2 px-2 rounded-lg text-slate-600 hover:text-slate-900 font-bold transition flex items-center justify-center gap-1.5';
     calWrap?.classList.remove('hidden');
+    todayBanner?.classList.add('hidden');
   } else {
     if (listBtn) listBtn.className = 'py-2 px-2 rounded-lg bg-brand-600 text-white font-extrabold shadow-xs transition flex items-center justify-center gap-1.5';
     if (calBtn) calBtn.className = 'py-2 px-2 rounded-lg text-slate-600 hover:text-slate-900 font-bold transition flex items-center justify-center gap-1.5';
     calWrap?.classList.add('hidden');
+    todayBanner?.classList.remove('hidden');
   }
   renderLogs();
+}
+
+function openYesterdayInCalendar() {
+  const now = new Date();
+  now.setDate(now.getDate() - 1);
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = String(now.getDate()).padStart(2, '0');
+  const yestStr = `${y}-${String(m + 1).padStart(2, '0')}-${d}`;
+  state.calendarYear = y;
+  state.calendarMonth = m;
+  state.selectedCalendarDate = yestStr;
+  setLogViewMode('CALENDAR');
 }
 
 function changeCalendarMonth(delta: number) {
@@ -951,8 +1845,10 @@ function renderLogsCalendar(filteredLogs: any[]) {
 function getFilteredLogsContext() {
   const keywordRaw = ((document.getElementById('searchInput') as HTMLInputElement | null)?.value || '').trim();
   const keyword = keywordRaw.toLowerCase();
+  const todayStr = getTodayString();
 
   const preCategoryLogs = state.logs.filter(l => {
+    if (state.logViewMode !== 'CALENDAR' && l.date !== todayStr) return false;
     const fallbackWorker = l.workerName ? null : state.staff.find(s => s.id === l.workerId);
     const wName = l.workerName || fallbackWorker?.name || '';
     if (state.filterWorkerId !== 'ALL' && l.workerId !== state.filterWorkerId) return false;
@@ -987,10 +1883,10 @@ function getFilteredLogsContext() {
     }
   }
 
-  return { keywordRaw, preCategoryLogs, categoryScopeLogs, baseFiltered, filtered, monthPrefix };
+  return { keywordRaw, todayStr, preCategoryLogs, categoryScopeLogs, baseFiltered, filtered, monthPrefix };
 }
 
-function updateLogsPdfSummaryCard(filtered: any[], keywordRaw: string, monthPrefix: string) {
+function updateLogsPdfSummaryCard(filtered: any[], keywordRaw: string, monthPrefix: string, todayStr: string) {
   const infoEl = document.getElementById('logsPdfSummaryInfo');
   const btn = document.getElementById('downloadLogsPdfBtn') as HTMLButtonElement | null;
   const parts: string[] = [];
@@ -998,7 +1894,7 @@ function updateLogsPdfSummaryCard(filtered: any[], keywordRaw: string, monthPref
   if (state.logViewMode === 'CALENDAR') {
     parts.push(state.selectedCalendarDate ? state.selectedCalendarDate : `${monthPrefix} 월간`);
   } else {
-    parts.push('전체 기간');
+    parts.push(`오늘(${todayStr})`);
   }
   parts.push(state.filterLogCategory === 'ALL' ? '전체 구분' : state.filterLogCategory);
   if (state.filterWorkerId !== 'ALL') {
@@ -1020,19 +1916,26 @@ function renderLogs() {
   const countBadge = document.getElementById('logCountBadge');
   if (!container) return;
 
-  const { keywordRaw, categoryScopeLogs, baseFiltered, filtered, monthPrefix } = getFilteredLogsContext();
+  const { keywordRaw, todayStr, categoryScopeLogs, baseFiltered, filtered, monthPrefix } = getFilteredLogsContext();
+  const pastLogsCount = state.logs.filter(l => l.date && l.date !== todayStr).length;
+  const todayResetText = document.getElementById('logsTodayResetText');
+  if (todayResetText) {
+    todayResetText.textContent = `오늘(${todayStr}) 작업내역만 표시 중 · 지난 기록 ${pastLogsCount}건은 달력에서 확인하세요.`;
+  }
 
   const catCounts: Record<string, number> = {
     ALL: categoryScopeLogs.length,
     '공용민원': 0,
     '세대민원': 0,
-    '정기점검': 0
+    '세대민원(긴급)': 0,
+    '정기점검': 0,
+    '하자보수': 0
   };
   categoryScopeLogs.forEach(l => {
     const c = l.category || '공용민원';
     catCounts[c] = (catCounts[c] || 0) + 1;
   });
-  ['ALL', '공용민원', '세대민원', '정기점검'].forEach(c => {
+  ['ALL', '공용민원', '세대민원', '세대민원(긴급)', '정기점검', '하자보수'].forEach(c => {
     const countEl = document.getElementById(`logCatCount-${c}`);
     if (countEl) countEl.textContent = String(catCounts[c] || 0);
   });
@@ -1041,7 +1944,7 @@ function renderLogs() {
     renderLogsCalendar(baseFiltered);
   }
 
-  updateLogsPdfSummaryCard(filtered, keywordRaw, monthPrefix);
+  updateLogsPdfSummaryCard(filtered, keywordRaw, monthPrefix, todayStr);
 
   if (countBadge) {
     countBadge.textContent = state.filterLogCategory === 'ALL'
@@ -1050,15 +1953,30 @@ function renderLogs() {
   }
 
   if (filtered.length === 0) {
+    const emptyMsg = state.logViewMode === 'LIST'
+      ? (state.filterLogCategory !== 'ALL'
+        ? `오늘(${todayStr}) '${escapeHtml(state.filterLogCategory)}' 구분에 등록된 작업일지 내역이 없습니다.`
+        : `오늘(${todayStr}) 등록된 작업일지 내역이 없습니다.`)
+      : (state.filterLogCategory !== 'ALL'
+        ? `'${escapeHtml(state.filterLogCategory)}' 구분에 등록된 작업일지 내역이 없습니다.`
+        : '선택한 날짜/기간에 등록된 작업일지 내역이 없습니다.');
+
     container.innerHTML = `
-      <div class="col-span-full bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-400 text-xs sm:text-sm space-y-2">
+      <div class="col-span-full bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-400 text-xs sm:text-sm space-y-2.5">
         <i class="fa-regular fa-folder-open text-2xl block text-slate-300"></i>
-        <p>${state.filterLogCategory !== 'ALL' ? `'${escapeHtml(state.filterLogCategory)}' 구분에 등록된 작업일지 내역이 없습니다.` : '등록된 작업일지 내역이 없습니다.'}</p>
-        ${state.filterLogCategory !== 'ALL' ? `
-          <button type="button" onclick="setLogCategoryFilter('ALL')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition">
-            전체 민원 구분 보기
-          </button>
-        ` : ''}
+        <p>${emptyMsg}</p>
+        <div class="flex items-center justify-center gap-2 flex-wrap">
+          ${state.filterLogCategory !== 'ALL' ? `
+            <button type="button" onclick="setLogCategoryFilter('ALL')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition">
+              전체 민원 구분 보기
+            </button>
+          ` : ''}
+          ${state.logViewMode === 'LIST' && pastLogsCount > 0 ? `
+            <button type="button" onclick="openYesterdayInCalendar()" class="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-lg text-xs font-bold transition">
+              <i class="fa-regular fa-calendar mr-1"></i>어제·지난 작업내역 달력에서 보기 (${pastLogsCount}건)
+            </button>
+          ` : ''}
+        </div>
       </div>
     `;
     return;
@@ -1070,11 +1988,15 @@ function renderLogs() {
     const workerRoleDisplay = log.workerRole || fallbackWorker?.role || '';
     const canModify = state.isAdmin || (state.selectedWorkerId && state.selectedWorkerId === log.workerId);
     const cat = log.category || '공용민원';
-    const catBadge = cat === '세대민원'
-      ? `<button type="button" onclick="setLogCategoryFilter('세대민원')" title="세대민원만 보기" class="px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-200 rounded-md text-[10px] font-extrabold transition cursor-pointer">🏠 세대민원</button>`
-      : cat === '정기점검'
-        ? `<button type="button" onclick="setLogCategoryFilter('정기점검')" title="정기점검만 보기" class="px-2 py-0.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-800 border border-indigo-200 rounded-md text-[10px] font-extrabold transition cursor-pointer">🔍 정기점검</button>`
-        : `<button type="button" onclick="setLogCategoryFilter('공용민원')" title="공용민원만 보기" class="px-2 py-0.5 bg-teal-100 hover:bg-teal-200 text-teal-800 border border-teal-200 rounded-md text-[10px] font-extrabold transition cursor-pointer">🏢 공용민원</button>`;
+    const catBadge = cat === '세대민원(긴급)'
+      ? `<button type="button" onclick="setLogCategoryFilter('세대민원(긴급)')" title="세대민원(긴급)만 보기" class="px-2 py-0.5 bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-200 rounded-md text-[10px] font-extrabold transition cursor-pointer">🚨 세대민원(긴급)</button>`
+      : cat === '세대민원'
+        ? `<button type="button" onclick="setLogCategoryFilter('세대민원')" title="세대민원만 보기" class="px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-200 rounded-md text-[10px] font-extrabold transition cursor-pointer">🏠 세대민원</button>`
+        : cat === '정기점검'
+          ? `<button type="button" onclick="setLogCategoryFilter('정기점검')" title="정기점검만 보기" class="px-2 py-0.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-800 border border-indigo-200 rounded-md text-[10px] font-extrabold transition cursor-pointer">🔍 정기점검</button>`
+          : cat === '하자보수'
+            ? `<button type="button" onclick="setLogCategoryFilter('하자보수')" title="하자보수만 보기" class="px-2 py-0.5 bg-violet-100 hover:bg-violet-200 text-violet-800 border border-violet-200 rounded-md text-[10px] font-extrabold transition cursor-pointer">🔧 하자보수</button>`
+            : `<button type="button" onclick="setLogCategoryFilter('공용민원')" title="공용민원만 보기" class="px-2 py-0.5 bg-teal-100 hover:bg-teal-200 text-teal-800 border border-teal-200 rounded-md text-[10px] font-extrabold transition cursor-pointer">🏢 공용민원</button>`;
 
     return `
       <article class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-2.5 flex flex-col justify-between">
@@ -1112,11 +2034,18 @@ function renderLogs() {
           </div>
         </div>
 
-        ${log.photo ? `
-          <div class="pt-1">
-            <img src="${log.photo}" alt="작업사진" onclick="openLightbox('${log.photo}')" class="w-full h-40 object-cover rounded-xl border border-slate-200 cursor-zoom-in hover:opacity-95 transition">
+        ${log.photo ? (isVideoMediaSrc(log.photo, log.mediaType) ? `
+          <div class="pt-1 relative">
+            <video src="${log.photo}" controls playsinline preload="metadata" class="w-full h-44 object-contain rounded-xl border border-slate-200 bg-black"></video>
+            <button type="button" onclick="openLightbox('${log.photo}', 'video')" class="mt-1.5 w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1">
+              <i class="fa-solid fa-expand"></i> 동영상 크게 보기
+            </button>
           </div>
-        ` : ''}
+        ` : `
+          <div class="pt-1">
+            <img src="${log.photo}" alt="작업사진" onclick="openLightbox('${log.photo}', 'image')" class="w-full h-40 object-cover rounded-xl border border-slate-200 cursor-zoom-in hover:opacity-95 transition">
+          </div>
+        `) : ''}
       </article>
     `;
   }).join('');
@@ -1144,7 +2073,7 @@ async function downloadFilteredLogsPDF() {
   try {
     const periodLabel = state.logViewMode === 'CALENDAR'
       ? (state.selectedCalendarDate ? state.selectedCalendarDate : `${monthPrefix} (월 전체)`)
-      : '전체 기간';
+      : `오늘 (${getTodayString()})`;
     const catLabel = state.filterLogCategory === 'ALL' ? '전체 구분' : state.filterLogCategory;
     const workerObj = state.filterWorkerId !== 'ALL' ? state.staff.find(s => s.id === state.filterWorkerId) : null;
     const workerLabel = workerObj ? `${workerObj.name} (${workerObj.role})` : '전체 직원';
@@ -1152,7 +2081,9 @@ async function downloadFilteredLogsPDF() {
 
     const countPublic = filtered.filter(l => (l.category || '공용민원') === '공용민원').length;
     const countUnit = filtered.filter(l => l.category === '세대민원').length;
+    const countUrgentUnit = filtered.filter(l => l.category === '세대민원(긴급)').length;
     const countInspect = filtered.filter(l => l.category === '정기점검').length;
+    const countDefect = filtered.filter(l => l.category === '하자보수').length;
 
     const now = new Date();
     const generatedAt = `${getTodayString()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -1162,8 +2093,24 @@ async function downloadFilteredLogsPDF() {
       const wName = log.workerName || fallbackWorker?.name || '미등록';
       const wRole = log.workerRole || fallbackWorker?.role || '';
       const cat = log.category || '공용민원';
-      const catBg = cat === '세대민원' ? '#fef3c7' : cat === '정기점검' ? '#e0e7ff' : '#ccfbf1';
-      const catColor = cat === '세대민원' ? '#92400e' : cat === '정기점검' ? '#3730a3' : '#115e59';
+      const catBg = cat === '세대민원(긴급)'
+        ? '#fee2e2'
+        : cat === '세대민원'
+          ? '#fef3c7'
+          : cat === '정기점검'
+            ? '#e0e7ff'
+            : cat === '하자보수'
+              ? '#ede9fe'
+              : '#ccfbf1';
+      const catColor = cat === '세대민원(긴급)'
+        ? '#991b1b'
+        : cat === '세대민원'
+          ? '#92400e'
+          : cat === '정기점검'
+            ? '#3730a3'
+            : cat === '하자보수'
+              ? '#5b21b6'
+              : '#115e59';
 
       return `
         <tr style="border-bottom:1px solid #cbd5e1;vertical-align:top;background:${idx % 2 === 1 ? '#f8fafc' : '#ffffff'};">
@@ -1183,7 +2130,7 @@ async function downloadFilteredLogsPDF() {
           <td style="padding:8px 8px;font-size:11px;color:#1e293b;line-height:1.45;word-break:break-word;">
             ${log.complaintContent ? `<div style="margin-bottom:3px;color:#92400e;"><strong style="font-weight:700;">[민원]</strong> ${escapeHtml(log.complaintContent)}</div>` : ''}
             <div><strong style="font-weight:700;color:#0f766e;">[처리]</strong> ${escapeHtml(log.content || '')}</div>
-            ${log.photo ? `<div style="margin-top:3px;font-size:10px;color:#0284c7;font-weight:700;">📷 현장 사진 첨부됨</div>` : ''}
+            ${log.photo ? `<div style="margin-top:3px;font-size:10px;color:#0284c7;font-weight:700;">${isVideoMediaSrc(log.photo, log.mediaType) ? '🎥 현장 동영상 첨부됨' : '📷 현장 사진 첨부됨'}</div>` : ''}
           </td>
         </tr>
       `;
@@ -1266,22 +2213,30 @@ async function downloadFilteredLogsPDF() {
             <div><strong style="color:#475569;">검색어:</strong> <span style="font-weight:700;color:#0f172a;">${escapeHtml(searchLabel)}</span></div>
           </div>
 
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:11px;text-align:center;">
-            <div style="border:1px solid #cbd5e1;border-radius:8px;padding:8px;background:#f1f5f9;">
-              <div style="color:#475569;font-size:10px;font-weight:700;">전체 조회</div>
-              <div style="font-size:15px;font-weight:800;color:#0f172a;margin-top:2px;">${filtered.length}건</div>
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;font-size:10px;text-align:center;">
+            <div style="border:1px solid #cbd5e1;border-radius:8px;padding:7px 4px;background:#f1f5f9;">
+              <div style="color:#475569;font-size:9.5px;font-weight:700;">전체 조회</div>
+              <div style="font-size:14px;font-weight:800;color:#0f172a;margin-top:2px;">${filtered.length}건</div>
             </div>
-            <div style="border:1px solid #99f6e4;border-radius:8px;padding:8px;background:#f0fdfa;">
-              <div style="color:#0f766e;font-size:10px;font-weight:700;">🏢 공용민원</div>
-              <div style="font-size:15px;font-weight:800;color:#115e59;margin-top:2px;">${countPublic}건</div>
+            <div style="border:1px solid #99f6e4;border-radius:8px;padding:7px 4px;background:#f0fdfa;">
+              <div style="color:#0f766e;font-size:9.5px;font-weight:700;">🏢 공용민원</div>
+              <div style="font-size:14px;font-weight:800;color:#115e59;margin-top:2px;">${countPublic}건</div>
             </div>
-            <div style="border:1px solid #fde68a;border-radius:8px;padding:8px;background:#fffbeb;">
-              <div style="color:#b45309;font-size:10px;font-weight:700;">🏠 세대민원</div>
-              <div style="font-size:15px;font-weight:800;color:#92400e;margin-top:2px;">${countUnit}건</div>
+            <div style="border:1px solid #fde68a;border-radius:8px;padding:7px 4px;background:#fffbeb;">
+              <div style="color:#b45309;font-size:9.5px;font-weight:700;">🏠 세대민원</div>
+              <div style="font-size:14px;font-weight:800;color:#92400e;margin-top:2px;">${countUnit}건</div>
             </div>
-            <div style="border:1px solid #c7d2fe;border-radius:8px;padding:8px;background:#eef2ff;">
-              <div style="color:#4338ca;font-size:10px;font-weight:700;">🔍 정기점검</div>
-              <div style="font-size:15px;font-weight:800;color:#3730a3;margin-top:2px;">${countInspect}건</div>
+            <div style="border:1px solid #fecaca;border-radius:8px;padding:7px 4px;background:#fef2f2;">
+              <div style="color:#b91c1c;font-size:9.5px;font-weight:700;">🚨 긴급민원</div>
+              <div style="font-size:14px;font-weight:800;color:#991b1b;margin-top:2px;">${countUrgentUnit}건</div>
+            </div>
+            <div style="border:1px solid #c7d2fe;border-radius:8px;padding:7px 4px;background:#eef2ff;">
+              <div style="color:#4338ca;font-size:9.5px;font-weight:700;">🔍 정기점검</div>
+              <div style="font-size:14px;font-weight:800;color:#3730a3;margin-top:2px;">${countInspect}건</div>
+            </div>
+            <div style="border:1px solid #ddd6fe;border-radius:8px;padding:7px 4px;background:#f5f3ff;">
+              <div style="color:#6d28d9;font-size:9.5px;font-weight:700;">🔧 하자보수</div>
+              <div style="font-size:14px;font-weight:800;color:#5b21b6;margin-top:2px;">${countDefect}건</div>
             </div>
           </div>
         </div>
@@ -1452,6 +2407,7 @@ async function togglePlanDone(id: string) {
   if (!plan) return;
   plan.done = !plan.done;
   renderPlans();
+  renderHomePortal();
   try { await updateDoc(getDocRef('plans', id), { done: plan.done }); } catch (err) { console.error(err); }
 }
 
@@ -1770,38 +2726,30 @@ function setHandoverFolderMode(mode: string) {
   }
 }
 
-function handleStaffHandoverFile(e: Event) {
+async function handleStaffHandoverFile(e: Event) {
   const input = e.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
   const label = document.getElementById('shFileLabel');
   if (file.type.startsWith('image/')) {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const maxDim = 800;
-        let w = img.width;
-        let h = img.height;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
-          else { w = Math.round((w * maxDim) / h); h = maxDim; }
-        }
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
-        currentStaffHandoverAttachment = {
-          name: file.name,
-          isImage: true,
-          dataUrl: canvas.toDataURL('image/jpeg', 0.65)
-        };
-        if (label) label.textContent = `첨부됨: ${file.name}`;
-        showToast('인수인계 서류 이미지가 첨부되었습니다.', 'success');
+    try {
+      const opt = await optimizeImageFile(file, {
+        scale: 0.5,
+        maxDimension: 1000,
+        maxTargetBytes: 380 * 1024,
+        initialQuality: 0.7
+      });
+      currentStaffHandoverAttachment = {
+        name: file.name,
+        isImage: true,
+        dataUrl: opt.dataUrl
       };
-      img.src = ev.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+      if (label) label.textContent = `첨부됨: ${file.name} (EXIF 삭제·50% 압축)`;
+      showToast('인수인계 서류 이미지가 EXIF 삭제 및 50% 리사이징되어 첨부되었습니다.', 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('이미지 최적화 처리 중 오류가 발생했습니다.', 'error');
+    }
   } else {
     currentStaffHandoverAttachment = {
       name: file.name,
@@ -3414,53 +4362,49 @@ async function extractTextFromAnyFile(file: File): Promise<string> {
 }
 
 // PURCHASE RECEIPT & ITEM VERIFICATION (물품구매확인란)
-function handlePurchasePhoto(e: Event, kind: string) {
+async function handlePurchasePhoto(e: Event, kind: string) {
   const input = e.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
-  showToast(kind === 'item' ? '물품 사진을 압축 처리 중입니다...' : '영수증 사진을 압축 처리 중입니다...', 'info');
-  const reader = new FileReader();
-  reader.onerror = () => showToast('사진 파일을 읽지 못했습니다. 다시 선택해 주세요.', 'error');
-  reader.onload = (ev) => {
-    const img = new Image();
-    img.onerror = () => showToast('지원하지 않는 이미지 형식입니다.', 'error');
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        const maxDim = 720;
-        let w = img.width;
-        let h = img.height;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
-          else { w = Math.round((w * maxDim) / h); h = maxDim; }
-        }
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.62);
-        if (kind === 'item') {
-          currentPurchaseItemPhoto = dataUrl;
-          const prevImg = document.getElementById('purchaseItemPreviewImg') as HTMLImageElement | null;
-          const prevBox = document.getElementById('purchaseItemPreviewBox');
-          if (prevImg) prevImg.src = dataUrl;
-          prevBox?.classList.remove('hidden');
-          showToast('물품 사진이 첨부되었습니다.', 'success');
-        } else {
-          currentPurchaseReceiptPhoto = dataUrl;
-          const prevImg = document.getElementById('purchaseReceiptPreviewImg') as HTMLImageElement | null;
-          const prevBox = document.getElementById('purchaseReceiptPreviewBox');
-          if (prevImg) prevImg.src = dataUrl;
-          prevBox?.classList.remove('hidden');
-          showToast('영수증 사진이 첨부되었습니다.', 'success');
-        }
-      } catch (err) {
-        console.error(err);
-        showToast('사진 압축 중 오류가 발생했습니다.', 'error');
+  showToast(kind === 'item' ? '물품 사진 EXIF 삭제 및 50% 리사이징 중...' : '영수증 사진 EXIF 삭제 및 50% 리사이징 중...', 'info');
+  try {
+    const opt = await optimizeImageFile(file, {
+      scale: 0.5,
+      maxDimension: 1100,
+      maxTargetBytes: 340 * 1024,
+      initialQuality: 0.7
+    });
+    const optLabel = `EXIF 삭제·50% (${formatBytes(opt.originalBytes)}→${formatBytes(opt.optimizedBytes)})`;
+    if (kind === 'item') {
+      currentPurchaseItemPhoto = opt.dataUrl;
+      const prevImg = document.getElementById('purchaseItemPreviewImg') as HTMLImageElement | null;
+      const prevBox = document.getElementById('purchaseItemPreviewBox');
+      const optTag = document.getElementById('purchaseItemOptTag');
+      if (prevImg) prevImg.src = opt.dataUrl;
+      if (optTag) {
+        optTag.textContent = optLabel;
+        optTag.classList.remove('hidden');
       }
-    };
-    img.src = ev.target?.result as string;
-  };
-  reader.readAsDataURL(file);
+      prevBox?.classList.remove('hidden');
+      showToast(`물품 사진 최적화 완료 (${formatBytes(opt.originalBytes)} → ${formatBytes(opt.optimizedBytes)})`, 'success');
+    } else {
+      currentPurchaseReceiptPhoto = opt.dataUrl;
+      const prevImg = document.getElementById('purchaseReceiptPreviewImg') as HTMLImageElement | null;
+      const prevBox = document.getElementById('purchaseReceiptPreviewBox');
+      const optTag = document.getElementById('purchaseReceiptOptTag');
+      if (prevImg) prevImg.src = opt.dataUrl;
+      if (optTag) {
+        optTag.textContent = optLabel;
+        optTag.classList.remove('hidden');
+      }
+      prevBox?.classList.remove('hidden');
+      showToast(`영수증 사진 최적화 완료 (${formatBytes(opt.originalBytes)} → ${formatBytes(opt.optimizedBytes)})`, 'success');
+    }
+  } catch (err) {
+    console.error(err);
+    input.value = '';
+    showToast('지원하지 않는 이미지 형식이거나 최적화 중 오류가 발생했습니다.', 'error');
+  }
 }
 
 function clearPurchasePhoto(kind: string) {
@@ -3468,11 +4412,13 @@ function clearPurchasePhoto(kind: string) {
     currentPurchaseItemPhoto = '';
     const el = document.getElementById('purchaseItemPhotoInput') as HTMLInputElement | null;
     if (el) el.value = '';
+    document.getElementById('purchaseItemOptTag')?.classList.add('hidden');
     document.getElementById('purchaseItemPreviewBox')?.classList.add('hidden');
   } else {
     currentPurchaseReceiptPhoto = '';
     const el = document.getElementById('purchaseReceiptPhotoInput') as HTMLInputElement | null;
     if (el) el.value = '';
+    document.getElementById('purchaseReceiptOptTag')?.classList.add('hidden');
     document.getElementById('purchaseReceiptPreviewBox')?.classList.add('hidden');
   }
 }
@@ -3702,12 +4648,18 @@ function downloadPurchasesCSV() {
 function setUnreadChatBadge(show: boolean) {
   const pingDot = document.getElementById('unreadChatDot');
   const solidDot = document.getElementById('unreadChatDotSolid');
+  const homeDot = document.getElementById('homeDot-chat');
+  const qDot = document.getElementById('qDot-chat');
   if (show) {
     pingDot?.classList.remove('hidden');
     solidDot?.classList.remove('hidden');
+    homeDot?.classList.remove('hidden');
+    qDot?.classList.remove('hidden');
   } else {
     pingDot?.classList.add('hidden');
     solidDot?.classList.add('hidden');
+    homeDot?.classList.add('hidden');
+    qDot?.classList.add('hidden');
   }
 }
 
@@ -3909,12 +4861,17 @@ async function handleAddStaff(e: Event) {
   e.preventDefault();
   const name = (document.getElementById('newStaffName') as HTMLInputElement).value.trim();
   const role = (document.getElementById('newStaffRole') as HTMLInputElement).value.trim();
+  const pinInput = document.getElementById('newStaffPin') as HTMLInputElement | null;
+  const pin = pinInput ? pinInput.value.trim() : '';
   if (!name || !role) return;
   const id = 'staff-' + Date.now();
-  const newStaff = { id, name, role };
+  const newStaff: any = { id, name, role };
+  if (pin) newStaff.pin = pin;
   state.staff.push(newStaff);
   (document.getElementById('newStaffName') as HTMLInputElement).value = '';
   (document.getElementById('newStaffRole') as HTMLInputElement).value = '';
+  if (pinInput) pinInput.value = '';
+  renderLoginWorkerSelect();
   renderWorkerDropdown();
   renderWorkerFilterChips();
   renderAdminStaffList();
@@ -3928,6 +4885,8 @@ function openEditStaffModal(id: string) {
   (document.getElementById('editStaffId') as HTMLInputElement).value = s.id;
   (document.getElementById('editStaffNameInput') as HTMLInputElement).value = s.name;
   (document.getElementById('editStaffRoleInput') as HTMLInputElement).value = s.role;
+  const pinInput = document.getElementById('editStaffPinInput') as HTMLInputElement | null;
+  if (pinInput) pinInput.value = s.pin || '';
   document.getElementById('editStaffModal')?.classList.remove('hidden');
 }
 
@@ -3940,14 +4899,18 @@ async function saveEditedStaff(e: Event) {
   const id = (document.getElementById('editStaffId') as HTMLInputElement).value;
   const name = (document.getElementById('editStaffNameInput') as HTMLInputElement).value.trim();
   const role = (document.getElementById('editStaffRoleInput') as HTMLInputElement).value.trim();
+  const pinInput = document.getElementById('editStaffPinInput') as HTMLInputElement | null;
+  const pin = pinInput ? pinInput.value.trim() : '';
   const s = state.staff.find(item => item.id === id);
   if (s) {
     s.name = name;
     s.role = role;
+    s.pin = pin;
+    renderLoginWorkerSelect();
     renderWorkerDropdown();
     renderWorkerFilterChips();
     renderAdminStaffList();
-    try { await updateDoc(getDocRef('staff', id), { name, role }); } catch (err) { console.error(err); }
+    try { await updateDoc(getDocRef('staff', id), { name, role, pin }); } catch (err) { console.error(err); }
   }
   closeEditStaffModal();
   showToast('직원 정보가 수정되었습니다.', 'success');
@@ -3955,6 +4918,11 @@ async function saveEditedStaff(e: Event) {
 
 async function deleteStaff(id: string) {
   state.staff = state.staff.filter(s => s.id !== id);
+  if (state.selectedWorkerId === id) {
+    state.selectedWorkerId = '';
+    localStorage.removeItem('horyeoul7_worker');
+  }
+  renderLoginWorkerSelect();
   renderWorkerDropdown();
   renderWorkerFilterChips();
   renderAdminStaffList();
@@ -3971,11 +4939,15 @@ function renderAdminStaffList() {
   }
   box.innerHTML = state.staff.map(s => `
     <div class="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
-      <div>
+      <div class="flex items-center gap-1.5 flex-wrap">
         <strong class="text-slate-800">${escapeHtml(s.name)}</strong>
-        <span class="text-slate-500 ml-1">${escapeHtml(s.role)}</span>
+        <span class="text-slate-500">${escapeHtml(s.role)}</span>
+        ${s.pin
+          ? `<span class="px-1.5 py-0.5 rounded bg-brand-50 text-brand-700 border border-brand-200 text-[10px] font-bold">🔒 개인비번</span>`
+          : `<span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-medium">공용비번</span>`
+        }
       </div>
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1 shrink-0">
         <button type="button" onclick="openEditStaffModal('${s.id}')" class="px-2 py-1 bg-blue-50 text-blue-700 rounded-lg font-bold">수정</button>
         <button type="button" onclick="deleteStaff('${s.id}')" class="px-2 py-1 bg-red-50 text-red-600 rounded-lg font-bold">삭제</button>
       </div>
@@ -3984,12 +4956,13 @@ function renderAdminStaffList() {
 }
 
 function downloadCSV() {
-  const rows: any[][] = [['작업날짜', '민원구분', '작성자', '직책', '작업장소', '민원내용', '처리내용', '작성시각', '사진첨부']];
+  const rows: any[][] = [['작업날짜', '민원구분', '작성자', '직책', '작업장소', '민원내용', '처리내용', '작성시각', '미디어첨부']];
   state.logs.forEach(l => {
     const fallbackWorker = l.workerName ? null : state.staff.find(s => s.id === l.workerId);
     const wName = l.workerName || fallbackWorker?.name || '';
     const wRole = l.workerRole || fallbackWorker?.role || '';
-    rows.push([l.date, l.category || '공용민원', wName, wRole, l.location, l.complaintContent || '', l.content, l.createdAt || '', l.photo ? 'O' : 'X']);
+    const mediaLabel = l.photo ? (isVideoMediaSrc(l.photo, l.mediaType) ? '동영상' : '사진') : 'X';
+    rows.push([l.date, l.category || '공용민원', wName, wRole, l.location, l.complaintContent || '', l.content, l.createdAt || '', mediaLabel]);
   });
   triggerCSVDownload(rows, `호려울마을7단지_공동작업일지_${getTodayString()}.csv`);
 }
@@ -4072,12 +5045,39 @@ function closeConfirmModal() {
   document.getElementById('confirmModal')?.classList.add('hidden');
 }
 
-function openLightbox(src: string) {
-  (document.getElementById('lightboxImg') as HTMLImageElement).src = src;
+function openLightbox(src: string, mediaType?: string) {
+  const imgEl = document.getElementById('lightboxImg') as HTMLImageElement | null;
+  const videoEl = document.getElementById('lightboxVideo') as HTMLVideoElement | null;
+  const isVideo = mediaType === 'video' || isVideoMediaSrc(src, mediaType);
+
+  if (isVideo) {
+    if (imgEl) { imgEl.classList.add('hidden'); imgEl.src = ''; }
+    if (videoEl) {
+      videoEl.src = src;
+      videoEl.classList.remove('hidden');
+      videoEl.play().catch(() => { /* user interaction handles play */ });
+    }
+  } else {
+    if (videoEl) {
+      videoEl.pause();
+      videoEl.removeAttribute('src');
+      videoEl.classList.add('hidden');
+    }
+    if (imgEl) {
+      imgEl.src = src;
+      imgEl.classList.remove('hidden');
+    }
+  }
   document.getElementById('imageLightbox')?.classList.remove('hidden');
 }
 
 function closeLightbox() {
+  const videoEl = document.getElementById('lightboxVideo') as HTMLVideoElement | null;
+  if (videoEl) {
+    videoEl.pause();
+    videoEl.removeAttribute('src');
+    videoEl.classList.add('hidden');
+  }
   document.getElementById('imageLightbox')?.classList.add('hidden');
 }
 
@@ -4105,11 +5105,11 @@ function escapeHtml(str: any): string {
 }
 
 Object.assign(window, {
-  handleLogin, handleLogout,
-  handleWorkerChange, switchTab,
+  handleLogin, handleLogout, handleLoginWorkerChange,
+  handleWorkerChange, switchTab, setHomePlanMode, renderHomePortal,
   cycleBanner, toggleBannerGlobal, handleAddBanner, deleteBanner,
-  selectLogCategory, setQuickLocation, handlePhotoUpload, clearPhoto, toggleVoiceInput, submitWorkLog,
-  setLogCategoryFilter, setWorkerFilter, setLogViewMode, changeCalendarMonth, goCalendarToday, selectCalendarDate, clearCalendarSelectedDate,
+  selectLogCategory, setQuickLocation, handlePhotoUpload, cancelMediaCompression, clearPhoto, toggleVoiceInput, setWriteNextAction, submitWorkLog,
+  setLogCategoryFilter, setWorkerFilter, setLogViewMode, openYesterdayInCalendar, changeCalendarMonth, goCalendarToday, selectCalendarDate, clearCalendarSelectedDate,
   openEditModal, closeEditModal, saveEditedLog, confirmDeleteLog, renderLogs, downloadFilteredLogsPDF,
   togglePlanAddForm, setPlanPeriodType, shiftPlanPeriod, resetPlanPeriodToday, handleAddPlan, togglePlanDone, deletePlan, sendPlanToWorkLog,
   syncLeaveEndDate, updateLeaveDaysCalc, submitLeaveRequest, setLeaveFilter, approveLeaveRequest, deleteLeaveRequest, openLeavePrintModal, closeLeavePrintModal,
